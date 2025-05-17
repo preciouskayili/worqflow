@@ -1,5 +1,5 @@
 import { Router } from "express";
-import oauthRouter from "./oauth/index.ts";
+import oauthRouter from "./oauth/google.ts";
 
 const router = Router();
 

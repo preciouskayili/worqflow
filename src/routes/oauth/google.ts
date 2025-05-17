@@ -6,3 +6,5 @@ const router = Router();
 
 router.get("/google", getGoogleOAuthUrlController);
 router.get("/google/token", getGoogleTokenController);
+
+export default router;
