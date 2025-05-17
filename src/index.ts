@@ -9,6 +9,7 @@ import dotenv from "dotenv";
 import { logger } from "./utils/logger";
 import { connectDB } from "./utils/db";
 import { env } from "./config/env";
+import authRouter from "./routes/auth";
 
 dotenv.config();
 
