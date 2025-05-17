@@ -69,9 +69,12 @@ export async function googleCallbackController(req: Request, res: Response) {
       } else {
         const tokens = await getGoogleToken(code!);
         // Get user info from Google
-        const userinfoRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-          headers: { Authorization: `Bearer ${tokens.access_token}` }
-        });
+        const userinfoRes = await fetch(
+          "https://www.googleapis.com/oauth2/v2/userinfo",
+          {
+            headers: { Authorization: `Bearer ${tokens.access_token}` },
+          }
+        );
         const userinfo = await userinfoRes.json();
         // userinfo: { id, email, name, ... }
         let user = await UserModel.findOne({ email: userinfo.email });
@@ -93,11 +96,13 @@ export async function googleCallbackController(req: Request, res: Response) {
           expires_at: tokens.expiry_date,
         });
         const JWT_SECRET = process.env.JWT_SECRET || "changeme";
-        const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: "7d" });
+        const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
+          expiresIn: "7d",
+        });
         res.status(200).json({
           message: "Google Account connected successfully",
           token,
-          user: { email: user.email, name: user.name, id: user._id }
+          user: { email: user.email, name: user.name, id: user._id },
         });
       }
     }

@@ -6,6 +6,7 @@ import { Router } from "express";
 
 const router = Router();
 
+// Integration (connect Google to existing user)
 router.get("/:user_id/google", getGoogleOAuthUrlController);
 router.get("/google/callback", googleCallbackController);
 

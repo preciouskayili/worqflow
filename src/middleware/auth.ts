@@ -17,10 +17,12 @@ export async function requireAuth(
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     res.status(401).json({ message: "Missing or invalid token" });
   } else {
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.split("Bearer ")[1];
+
     try {
       const payload = jwt.verify(token, JWT_SECRET) as any;
-      const user = await UserModel.findById(payload.userId).select("-password");
+      const user = await UserModel.findById(payload.userId);
+
       if (!user) {
         res.status(401).json({ message: "User not found" });
       } else {

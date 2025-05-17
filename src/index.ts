@@ -9,7 +9,6 @@ import dotenv from "dotenv";
 import { logger } from "./utils/logger";
 import { connectDB } from "./utils/db";
 import { env } from "./config/env";
-import authRouter from "./routes/auth";
 
 dotenv.config();
 
@@ -22,7 +21,9 @@ const apiVersion = env.API_VERSION || "v1";
 const app = express();
 
 app.use(helmet());
-app.use(morgan("dev", { stream: { write: (message) => logger.info(message) } }));
+app.use(
+  morgan("dev", { stream: { write: (message) => logger.info(message) } })
+);
 app.set("trust proxy", 1 /* number of proxies between user and server */);
 app.use(compression());
 app.use(express.json());
