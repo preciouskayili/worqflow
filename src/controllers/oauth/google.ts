@@ -11,28 +11,37 @@ export async function getGoogleOAuthUrlController(req: Request, res: Response) {
       user_id,
       name: "Google",
     });
+
     if (integration) {
       return res
-        .status(200)
+        .status(409)
         .json({ message: "Google Account already connected" });
     }
+  } else {
+    return res.status(400).json({ message: "User ID is required" });
   }
 
   const url = await getGoogleOAuthUrl(scopes);
-  res.json({ url });
+  return res.status(200).json({ url });
 }
 
 export async function getGoogleTokenController(req: Request, res: Response) {
   const code = req.query.code as string;
+  const user_id = req.params.user_id;
+
+  if (!user_id) {
+    return res.status(400).json({ message: "User ID is required" });
+  }
+
   const tokens = await getGoogleToken(code);
 
   const integration = await IntegrationModel.create({
     name: "Google",
-    user_id: req.params.user_id,
+    user_id,
     access_token: tokens.access_token,
     refresh_token: tokens.refresh_token,
     expires_at: tokens.expiry_date,
   });
 
-  res.json(integration);
+  return res.status(201).json(integration);
 }
