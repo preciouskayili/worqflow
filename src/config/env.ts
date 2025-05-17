@@ -10,4 +10,5 @@ export const env = {
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || "",
   GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI || "",
   API_VERSION: process.env.API_VERSION || "v1",
+  STATE_SECRET: process.env.STATE_SECRET || "",
 };

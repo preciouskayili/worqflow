@@ -9,10 +9,11 @@ const auth = new OAuth2Client(
   env.GOOGLE_REDIRECT_URI
 );
 
-export async function getGoogleOAuthUrl(scopes: string[]) {
+export async function getGoogleOAuthUrl(scopes: string[], state?: string) {
   const url = auth.generateAuthUrl({
     access_type: "offline",
     scope: scopes,
+    state,
   });
 
   return url;
@@ -23,5 +24,3 @@ export async function getGoogleToken(code: string) {
   auth.setCredentials(tokens);
   return tokens;
 }
-
-
