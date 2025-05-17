@@ -7,6 +7,6 @@ router.get("/", (_req, res) => {
   res.json({ message: "Hello from Worqai API" });
 });
 
-router.use("/oauth", oauthRouter);
+router.use(":user_id/oauth", oauthRouter);
 
 export default router;

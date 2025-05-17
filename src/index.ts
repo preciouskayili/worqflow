@@ -6,31 +6,16 @@ import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import compression from "compression";
 import dotenv from "dotenv";
-import { createLogger, format, transports } from "winston";
+import { logger } from "./utils/logger";
+import { connectDB } from "./utils/db";
+import { env } from "./config/env";
 
 dotenv.config();
 
-const logger = createLogger({
-  level: "info",
-  format: format.combine(
-    format.errors({ stack: true }),
-    format.json(),
-    format.timestamp(),
-    format.colorize(),
-    format.printf(
-      (info) =>
-        `${info.timestamp} ${info.level} ${info.message} ${info.stack}`
-    )
-  ),
-  transports: [
-    new transports.Console(),
-    new transports.File({ filename: "logs/error.log", level: "error" }),
-    new transports.File({ filename: "logs/combined.log" }),
-  ],
-});
+connectDB();
 
 // Initialize Express app
-const apiVersion = process.env.API_VERSION || "v1";
+const apiVersion = env.API_VERSION || "v1";
 
 // Middleware
 const app = express();
@@ -45,7 +30,7 @@ app.use(express.urlencoded({ extended: true }));
 // CORS Configuration
 app.use(
   cors({
-    origin: [process.env.CLIENT_ORIGIN!],
+    origin: [env.CLIENT_ORIGIN],
     allowedHeaders: ["Authorization", "Content-Type"],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     maxAge: 86400,
@@ -82,7 +67,7 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 // Start the Express server
-const APP_PORT = process.env.APP_PORT || 8000;
+const APP_PORT = env.APP_PORT || 8000;
 
 app.listen(APP_PORT, () => {
   logger.info(`Express server listening on port ${APP_PORT}`);

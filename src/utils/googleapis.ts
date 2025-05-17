@@ -1,11 +1,12 @@
 import { OAuth2Client } from "google-auth-library";
 import dotenv from "dotenv";
+import { env } from "../config/env";
 dotenv.config();
 
 const auth = new OAuth2Client(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  process.env.GOOGLE_REDIRECT_URI
+  env.GOOGLE_CLIENT_ID,
+  env.GOOGLE_CLIENT_SECRET,
+  env.GOOGLE_REDIRECT_URI
 );
 
 export async function getGoogleOAuthUrl(scopes: string[]) {

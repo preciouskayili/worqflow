@@ -1,0 +1,13 @@
+import dotenv from "dotenv";
+dotenv.config();
+
+export const env = {
+  NODE_ENV: process.env.NODE_ENV || "development",
+  APP_PORT: Number(process.env.APP_PORT) || 8000,
+  MONGODB_URI: process.env.MONGODB_URI || "",
+  CLIENT_ORIGIN: process.env.CLIENT_ORIGIN || "",
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || "",
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || "",
+  GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI || "",
+  API_VERSION: process.env.API_VERSION || "v1",
+};

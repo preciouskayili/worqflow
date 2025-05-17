@@ -1,5 +1,8 @@
 import { Router } from "express";
-import { getGoogleOAuthUrlController, getGoogleTokenController } from "../../controllers/oauth/google.ts";
+import {
+  getGoogleOAuthUrlController,
+  getGoogleTokenController,
+} from "../../controllers/oauth/google.ts";
 
 const router = Router();
 
