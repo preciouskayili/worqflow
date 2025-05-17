@@ -7,7 +7,7 @@ export async function getGoogleOAuthUrlController(
 ) {
   const scopes = ["https://www.googleapis.com/auth/calendar"];
   const url = await getGoogleOAuthUrl(scopes);
-  res.redirect(url);
+  res.json({ url });
 }
 
 export async function getGoogleTokenController(req: Request, res: Response) {

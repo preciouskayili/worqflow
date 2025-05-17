@@ -37,7 +37,7 @@ const app = express();
 
 app.use(helmet());
 app.use(morgan("dev", { stream: { write: (message) => logger.info(message) } }));
-app.enable("trust proxy");
+app.set("trust proxy", 1 /* number of proxies between user and server */);
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
