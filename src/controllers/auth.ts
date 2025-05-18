@@ -46,14 +46,18 @@ export async function requestMagicLinkController(req: Request, res: Response) {
       env.FRONTEND_URL || "http://localhost:3000"
     }/magic-link/verify?token=${magicLinkToken}`;
 
-    await resend.emails.send({
-      from: env.RESEND_FROM_EMAIL,
-      to: email,
-      subject: "Your Magic Login Link",
-      html: `<p>Click <a href="${magicLinkUrl}">here</a> to log in. This link expires in 15 minutes.</p>`,
-    });
+    try {
+      await resend.emails.send({
+        from: env.RESEND_FROM_EMAIL,
+        to: email,
+        subject: "Your Magic Login Link",
+        html: `<p>Click <a href="${magicLinkUrl}">here</a> to log in. This link expires in 15 minutes.</p>`,
+      });
 
-    res.status(200).json({ message: "Magic link sent if email exists." });
+      res.status(200).json({ message: "Magic link sent if email exists." });
+    } catch (err) {
+      res.status(500).json({ message: "Unable to send magic link" });
+    }
   }
 }
 
