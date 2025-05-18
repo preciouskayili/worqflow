@@ -14,6 +14,7 @@ const magicLinkRequestSchema = z.object({
       message: "Invalid email address",
     })
     .email("Email address must be valid"),
+  name: z.string().optional(), // Name is optional for login, required for registration
 });
 
 export async function requestMagicLinkController(req: Request, res: Response) {
@@ -22,41 +23,51 @@ export async function requestMagicLinkController(req: Request, res: Response) {
   if (!parsed.success) {
     res.status(400).json({ message: parsed.error.errors[0].message });
   } else {
-    const { email } = parsed.data;
+    const { email, name } = parsed.data;
     let user = await UserModel.findOne({ email });
 
     if (!user) {
-      user = await UserModel.create({ email });
+      if (!name) {
+        res.status(400).json({ message: "Name is required for new users." });
+      } else {
+        user = await UserModel.create({ email, name });
+      }
+    } else if (name && !user.name) {
+      // Optionally update name if not set
+      user.name = name;
+      await user.save();
     }
 
-    // Generate a secure, time-limited token (JWT)
-    const magicLinkToken = jwt.sign(
-      { userId: user._id, type: "magic" },
-      env.JWT_SECRET,
-      { expiresIn: "15m" }
-    );
+    if (user) {
+      // Generate a secure, time-limited token (JWT)
+      const magicLinkToken = jwt.sign(
+        { userId: user._id, type: "magic" },
+        env.JWT_SECRET,
+        { expiresIn: "15m" }
+      );
 
-    user.magicLinkToken = magicLinkToken;
-    user.magicLinkExpires = new Date(Date.now() + 15 * 60 * 1000);
+      user.magicLinkToken = magicLinkToken;
+      user.magicLinkExpires = new Date(Date.now() + 15 * 60 * 1000);
 
-    await user.save();
+      await user.save();
 
-    // Send magic link email
-    const magicLinkUrl = `${
-      env.FRONTEND_URL || "http://localhost:3000"
-    }/magic-link/verify?token=${magicLinkToken}`;
+      // Send magic link email
+      const magicLinkUrl = `${
+        env.FRONTEND_URL || "http://localhost:3000"
+      }/magic-link/verify?token=${magicLinkToken}`;
 
-    try {
-      await resend.emails.send({
-        from: env.RESEND_FROM_EMAIL,
-        to: email,
-        subject: "Your Magic Login Link",
-        html: `<p>Click <a href="${magicLinkUrl}">here</a> to log in. This link expires in 15 minutes.</p>`,
-      });
+      try {
+        await resend.emails.send({
+          from: env.RESEND_FROM_EMAIL,
+          to: email,
+          subject: "Your Magic Login Link",
+          html: `<p>Click <a href="${magicLinkUrl}">here</a> to log in. This link expires in 15 minutes.</p>`,
+        });
 
-      res.status(200).json({ message: "Magic link sent if email exists." });
-    } catch (err) {
-      res.status(500).json({ message: "Unable to send magic link" });
+        res.status(200).json({ message: "Magic link sent if email exists." });
+      } catch (err) {
+        res.status(500).json({ message: "Unable to send magic link" });
+      }
     }
   }
 }

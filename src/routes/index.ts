@@ -1,6 +1,8 @@
 import { Router } from "express";
 import oauthRouter from "./oauth/google.ts";
 import authRouter from "./auth.ts";
+import { requireAuth } from "../middleware/auth";
+
 const router = Router();
 
 router.get("/", (_req, res) => {
@@ -8,6 +10,6 @@ router.get("/", (_req, res) => {
 });
 
 router.use("/auth", authRouter);
-router.use("/oauth", oauthRouter);
+router.use("/oauth", requireAuth, oauthRouter);
 
 export default router;
