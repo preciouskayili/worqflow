@@ -1,5 +1,5 @@
 import { Router } from "express";
-import oauthRouter from "./oauth/google.ts";
+import oauthRouter from "./oauth/index";
 import authRouter from "./auth.ts";
 import { requireAuth } from "../middleware/auth";
 
