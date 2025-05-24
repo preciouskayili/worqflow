@@ -15,4 +15,7 @@ export const env = {
   RESEND_API_KEY: process.env.RESEND_API_KEY || "",
   RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL || "",
   FRONTEND_URL: process.env.FRONTEND_URL || "",
+  SLACK_CLIENT_ID: process.env.SLACK_CLIENT_ID || "",
+  SLACK_CLIENT_SECRET: process.env.SLACK_CLIENT_SECRET || "",
+  SLACK_REDIRECT_URI: process.env.SLACK_REDIRECT_URI || "",
 };

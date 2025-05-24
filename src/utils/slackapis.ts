@@ -1,8 +1,9 @@
 import axios from "axios";
+import { env } from "../config/env";
 
-const SLACK_CLIENT_ID = process.env.SLACK_CLIENT_ID!;
-const SLACK_CLIENT_SECRET = process.env.SLACK_CLIENT_SECRET!;
-const SLACK_REDIRECT_URI = process.env.SLACK_REDIRECT_URI!;
+const SLACK_CLIENT_ID = env.SLACK_CLIENT_ID;
+const SLACK_CLIENT_SECRET = env.SLACK_CLIENT_SECRET;
+const SLACK_REDIRECT_URI = env.SLACK_REDIRECT_URI;
 
 export async function getSlackOAuthUrl(scopes: string[]) {
   const params = new URLSearchParams({
