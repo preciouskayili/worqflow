@@ -1,20 +1,23 @@
 import { Schema, model, Types } from "mongoose";
 
-const ChatSessionSchema = new Schema({
-  userId: { type: Types.ObjectId, required: true, ref: "User" },
-  sessionId: { type: String, required: true, unique: true },
-  title: { type: String },
-  startedAt: { type: Date, default: Date.now },
-  lastActivityAt: { type: Date, default: Date.now },
-});
+const ThreadSchema = new Schema(
+  {
+    lastMessageAt: { type: Date, default: Date.now, required: true },
+    userId: { type: Types.ObjectId, required: true, ref: "User" },
+    title: { type: String, default: "[No Name]" },
+  },
+  { timestamps: true }
+);
 
-const ChatMessageSchema = new Schema({
-  sessionId: { type: String, required: true },
-  userId: { type: Types.ObjectId, required: true, ref: "User" },
-  role: { type: String, enum: ["user", "agent"], required: true },
-  content: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now },
-});
+const ChatMessageSchema = new Schema(
+  {
+    thread: { type: Types.ObjectId, required: true, ref: "Thread" },
+    user: { type: Types.ObjectId, required: true, ref: "User" },
+    role: { type: String, enum: ["user", "agent"], required: true },
+    content: { type: String, required: true },
+  },
+  { timestamps: true }
+);
 
-export const ChatSession = model("ChatSession", ChatSessionSchema);
-export const ChatMessage = model("ChatMessage", ChatMessageSchema);
+export const ThreadModel = model("Thread", ThreadSchema);
+export const ChatMessageModel = model("ChatMessage", ChatMessageSchema);

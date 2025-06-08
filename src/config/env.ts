@@ -19,3 +19,5 @@ export const env = {
   SLACK_CLIENT_SECRET: process.env.SLACK_CLIENT_SECRET || "",
   SLACK_REDIRECT_URI: process.env.SLACK_REDIRECT_URI || "",
 };
+
+export const MODEL = "gpt-4o-mini";
