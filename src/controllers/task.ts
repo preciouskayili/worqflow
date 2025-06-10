@@ -7,6 +7,7 @@ import {
 import { AuthRequest } from "../middleware/auth";
 import { IntegrationModel } from "../models/Integrations";
 import { getCalendarService } from "../utils/googleapis";
+import { saveMemory } from "../utils/vectorestore";
 
 const taskSchema = z.object({
   task: z.string(),
@@ -22,7 +23,10 @@ export async function createTask(req: AuthRequest, res: Response) {
     if (!result.success) {
       res.status(400).json({ message: "Task is required" });
     } else {
+      const { task } = result.data;
       const integration = await getIntegration(req.user._id);
+      const memory = await saveMemory(result.data.task, req.user._id);
+
       if (!integration) {
         res.status(404).json({ message: "Integration not found" });
       } else {
@@ -40,7 +44,7 @@ export async function createTask(req: AuthRequest, res: Response) {
             description: c.description ?? "",
           })) || [];
 
-        res.status(200).json({ calendarList });
+        res.status(200).json({ memory });
       }
     }
   } catch (error) {

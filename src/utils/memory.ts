@@ -1,4 +1,4 @@
-import { getEmbedding } from "./vectorestore";
+import { getEmbedding, saveMemory } from "./vectorestore";
 import { pc } from "./vectorestore";
 import { env } from "../config/env";
 

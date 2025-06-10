@@ -2,8 +2,7 @@ import { OAuth2Client } from "google-auth-library";
 import dotenv from "dotenv";
 import { env } from "../config/env";
 import { google } from "googleapis";
-import axios from "axios";
-import { IntegrationModel } from "../models/Integrations"; // adjust path
+import { IntegrationModel } from "../models/Integrations";
 dotenv.config();
 
 const auth = new OAuth2Client(
@@ -57,6 +56,7 @@ export async function getCalendarService(integration: {
     env.GOOGLE_CLIENT_SECRET,
     env.GOOGLE_REDIRECT_URI
   );
+
   client.setCredentials({
     access_token: integration.access_token!,
     refresh_token: integration.refresh_token!,
@@ -67,7 +67,6 @@ export async function getCalendarService(integration: {
 
   await refreshAndSaveTokens(client, integration);
 
-  // trigger refresh if needed
   await client.getAccessToken();
 
   return google.calendar({ version: "v3", auth: client });

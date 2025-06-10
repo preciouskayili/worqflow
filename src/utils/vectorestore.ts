@@ -35,11 +35,13 @@ export async function getEmbedding(text: string) {
 }
 
 export async function saveMemory(text: string, userId: string) {
+  await createStore();
+
   const index = pc.index(INDEX_NAME);
 
   const embedding = await getEmbedding(text);
 
-  await index.upsert([
+  const result = await index.upsert([
     {
       id: uuidv4(),
       values: embedding,
@@ -50,6 +52,8 @@ export async function saveMemory(text: string, userId: string) {
       },
     },
   ]);
+
+  return result;
 }
 
 export async function fetchMemory(text: string, userId: string, limit: number) {
