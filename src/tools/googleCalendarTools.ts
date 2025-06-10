@@ -85,7 +85,7 @@ export const insertCalendarEvent = tool({
     endTime: z.string(),
     description: z.string(),
     location: z.string(),
-    attendees: z.array(z.string()).optional(),
+    attendees: z.array(z.string()).optional().nullable(),
     timezone: z.string(),
     createGoogleMeet: z.boolean(),
     userId: z.string(),
