@@ -1,0 +1,52 @@
+import { Request, Response } from "express";
+import { z } from "zod";
+import {
+  listCalendarEvents,
+  listCalendarList,
+} from "../tools/googleCalendarTools";
+import { AuthRequest } from "../middleware/auth";
+import { IntegrationModel } from "../models/Integrations";
+import { getCalendarService } from "../utils/googleapis";
+
+const taskSchema = z.object({
+  task: z.string(),
+  access_token: z.string(),
+  refresh_token: z.string(),
+  expires_at: z.string().optional(),
+});
+
+function getIntegration(userId: string) {
+  return IntegrationModel.findOne({ user_id: userId }).lean();
+}
+
+export async function createTask(req: AuthRequest, res: Response) {
+  try {
+    const { task } = taskSchema.parse(req.body);
+    if (!task) {
+      res.status(400).json({ message: "Task is required" });
+    } else {
+      const integration = await getIntegration(req.user._id);
+      if (!integration) {
+        res.status(404).json({ message: "Integration not found" });
+      } else {
+        const service = await getCalendarService({
+          access_token: integration.access_token!,
+          refresh_token: integration.refresh_token!,
+        });
+        const response = await service.calendarList.list({
+          maxResults: Math.min(200, 200),
+        });
+        const result =
+          response.data.items?.map((c) => ({
+            id: c.id!,
+            name: c.summary!,
+            description: c.description ?? "",
+          })) || [];
+
+        res.status(200).json({ result });
+      }
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error" });
+  }
+}

@@ -4,6 +4,7 @@ import authRouter from "./auth.ts";
 import integrationsRouter from "./integrations";
 import chatMessageRouter from "./chatMessage";
 import { requireAuth } from "../middleware/auth";
+import taskRouter from "./task.ts";
 
 const router = Router();
 
@@ -15,5 +16,6 @@ router.use("/auth", authRouter);
 router.use("/oauth", requireAuth, oauthRouter);
 router.use("/integrations", requireAuth, integrationsRouter);
 router.use("/chat", requireAuth, chatMessageRouter);
+router.use("/ai", requireAuth, taskRouter);
 
 export default router;

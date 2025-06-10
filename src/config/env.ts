@@ -18,6 +18,9 @@ export const env = {
   SLACK_CLIENT_ID: process.env.SLACK_CLIENT_ID || "",
   SLACK_CLIENT_SECRET: process.env.SLACK_CLIENT_SECRET || "",
   SLACK_REDIRECT_URI: process.env.SLACK_REDIRECT_URI || "",
+  PINECONE_API_KEY: process.env.PINECONE_API_KEY || "",
+  PINECONE_INDEX_NAME: process.env.PINECONE_INDEX_NAME || "",
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY || "",
 };
 
 export const MODEL = "gpt-4o-mini";

@@ -2,16 +2,27 @@ import { tool } from "@openai/agents";
 import { z } from "zod";
 import { getCalendarService } from "../utils/googleapis";
 import { calendar_v3 } from "googleapis";
+import { RunContext } from "@openai/agents";
+
+type UserInfo = {
+  access_token: string;
+  refresh_token: string;
+  expires_at?: string;
+};
 
 export const createCalendarList = tool({
   name: "create_calendar_list",
   description: "Creates a new calendar",
-  parameters: z.object({ calendarName: z.string(), userId: z.string() }),
-  async execute({ args }) {
-    const service = await getCalendarService(args.userId);
+  parameters: z.object({ calendarName: z.string() }),
+  async execute(
+    args: { calendarName: string },
+    runContext?: RunContext<UserInfo>
+  ) {
+    const service = await getCalendarService(runContext?.context!);
     const res = await service.calendars.insert({
       requestBody: { summary: args.calendarName },
     });
+
     return res.data;
   },
 });
@@ -23,8 +34,11 @@ export const listCalendarList = tool({
     maxCapacity: z.number().int().positive(),
     userId: z.string(),
   }),
-  async execute({ args }) {
-    const service = await getCalendarService(args.userId);
+  async execute(
+    args: { maxCapacity: number; userId: string },
+    runContext?: RunContext<UserInfo>
+  ) {
+    const service = await getCalendarService(runContext?.context!);
     const res = await service.calendarList.list({
       maxResults: Math.min(200, args.maxCapacity),
     });
@@ -46,8 +60,11 @@ export const listCalendarEvents = tool({
     maxCapacity: z.number().int().positive(),
     userId: z.string(),
   }),
-  async execute({ args }) {
-    const service = await getCalendarService(args.userId);
+  async execute(
+    args: { calendarId: string; maxCapacity: number; userId: string },
+    runContext?: RunContext<UserInfo>
+  ) {
+    const service = await getCalendarService(runContext?.context!);
     const res = await service.events.list({
       calendarId: args.calendarId,
       maxResults: args.maxCapacity,
@@ -73,8 +90,22 @@ export const insertCalendarEvent = tool({
     createGoogleMeet: z.boolean(),
     userId: z.string(),
   }),
-  async execute({ args }) {
-    const service = await getCalendarService(args.userId);
+  async execute(
+    args: {
+      calendarId: string;
+      summary: string;
+      startTime: string;
+      endTime: string;
+      description: string;
+      location: string;
+      attendees: string[];
+      timezone: string;
+      createGoogleMeet: boolean;
+      userId: string;
+    },
+    runContext?: RunContext<UserInfo>
+  ) {
+    const service = await getCalendarService(runContext?.context!);
 
     const eventBody: calendar_v3.Schema$Event = {
       summary: args.summary,

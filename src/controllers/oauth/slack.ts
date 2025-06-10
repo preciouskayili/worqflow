@@ -5,10 +5,7 @@ import { AuthRequest } from "../../middleware/auth";
 import { SLACK_SCOPES } from "../../config/slack_scopes";
 
 // Step 1: build consent-screen URL
-export async function getSlackOAuthUrlController(
-  req: AuthRequest,
-  res: Response
-) {
+export async function getSlackOAuthUrl(req: AuthRequest, res: Response) {
   const userId = req.user._id;
   const exists = await IntegrationModel.exists({
     user_id: userId,
@@ -25,7 +22,7 @@ export async function getSlackOAuthUrlController(
 }
 
 // Step 2: handle Slack's redirect
-export async function slackCallbackController(req: AuthRequest, res: Response) {
+export async function slackCallback(req: AuthRequest, res: Response) {
   const { code } = req.query as Record<string, string>;
   if (!code) {
     res.status(400).json({ message: "Missing code" });

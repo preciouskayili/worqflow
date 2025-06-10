@@ -11,6 +11,9 @@ importers:
       '@openai/agents':
         specifier: ^0.0.4
         version: 0.0.4(ws@8.18.2)(zod@3.24.4)
+      '@pinecone-database/pinecone':
+        specifier: ^6.1.0
+        version: 6.1.0
       '@types/bcrypt':
         specifier: ^5.0.2
         version: 5.0.2
@@ -59,12 +62,18 @@ importers:
       morgan:
         specifier: ^1.10.0
         version: 1.10.0
+      openai:
+        specifier: ^5.2.0
+        version: 5.2.0(ws@8.18.2)(zod@3.24.4)
       resend:
         specifier: ^4.5.1
         version: 4.5.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       typescript:
         specifier: ^5.8.3
         version: 5.8.3
+      uuid:
+        specifier: ^11.1.0
+        version: 11.1.0
       winston:
         specifier: ^3.17.0
         version: 3.17.0
@@ -277,6 +286,10 @@ packages:
 
   '@openai/agents@0.0.4':
     resolution: {integrity: sha512-anLV95zQc9YVmOaF6HXVhazeO7K/w0S15dkBPYHC3RDfXLN5QUI/VfCQpz1d8ehTz9zKbrokVOZ1loh+VHW2Ag==}
+
+  '@pinecone-database/pinecone@6.1.0':
+    resolution: {integrity: sha512-g+hOT5pA/lt0ICZ949aQPkF5u4TDWZtfbwV+25ewcYSF9o2EBQLdrxMKSIfkESSM5FyizBct0Caq4CSYu5fbIw==}
+    engines: {node: '>=18.0.0'}
 
   '@react-email/render@1.0.6':
     resolution: {integrity: sha512-zNueW5Wn/4jNC1c5LFgXzbUdv5Lhms+FWjOvWAhal7gx5YVf0q6dPJ0dnR70+ifo59gcMLwCZEaTS9EEuUhKvQ==}
@@ -1029,8 +1042,8 @@ packages:
   one-time@1.0.0:
     resolution: {integrity: sha512-5DXOiRKwuSEcQ/l0kGCF6Q3jcADFv5tSmRaJck/OqkVFcOzutB134KRSfF0xDrL39MNnqxbHBbUUcjZIhTgb2g==}
 
-  openai@5.1.1:
-    resolution: {integrity: sha512-lgIdLqvpLpz8xPUKcEIV6ml+by74mbSBz8zv/AHHebtLn/WdpH4kdXT3/Q5uUKDHg3vHV/z9+G9wZINRX6rkDg==}
+  openai@5.2.0:
+    resolution: {integrity: sha512-b+Sf2Yk2eApDkhqHr7C4d5hux9gkHUvyqQ7RrdSfLsjrXkCZpJPqkME0u5Py7RPB28Ozz+RkJZpW7YPTOoChew==}
     hasBin: true
     peerDependencies:
       ws: ^8.18.0
@@ -1275,6 +1288,10 @@ packages:
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
+  uuid@11.1.0:
+    resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
+    hasBin: true
+
   uuid@9.0.1:
     resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
     hasBin: true
@@ -1467,7 +1484,7 @@ snapshots:
     dependencies:
       '@openai/zod': zod@3.25.56
       debug: 4.4.1
-      openai: 5.1.1(ws@8.18.2)(zod@3.24.4)
+      openai: 5.2.0(ws@8.18.2)(zod@3.24.4)
     optionalDependencies:
       '@modelcontextprotocol/sdk': 1.12.1
       zod: 3.24.4
@@ -1480,7 +1497,7 @@ snapshots:
       '@openai/agents-core': 0.0.4(ws@8.18.2)(zod@3.24.4)
       '@openai/zod': zod@3.25.56
       debug: 4.4.1
-      openai: 5.1.1(ws@8.18.2)(zod@3.24.4)
+      openai: 5.2.0(ws@8.18.2)(zod@3.24.4)
     transitivePeerDependencies:
       - supports-color
       - ws
@@ -1504,13 +1521,15 @@ snapshots:
       '@openai/agents-openai': 0.0.4(ws@8.18.2)(zod@3.24.4)
       '@openai/agents-realtime': 0.0.4(zod@3.24.4)
       debug: 4.4.1
-      openai: 5.1.1(ws@8.18.2)(zod@3.24.4)
+      openai: 5.2.0(ws@8.18.2)(zod@3.24.4)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
       - utf-8-validate
       - ws
       - zod
+
+  '@pinecone-database/pinecone@6.1.0': {}
 
   '@react-email/render@1.0.6(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
@@ -2376,7 +2395,7 @@ snapshots:
     dependencies:
       fn.name: 1.1.0
 
-  openai@5.1.1(ws@8.18.2)(zod@3.24.4):
+  openai@5.2.0(ws@8.18.2)(zod@3.24.4):
     optionalDependencies:
       ws: 8.18.2
       zod: 3.24.4
@@ -2625,6 +2644,8 @@ snapshots:
   url-template@2.0.8: {}
 
   util-deprecate@1.0.2: {}
+
+  uuid@11.1.0: {}
 
   uuid@9.0.1: {}
 

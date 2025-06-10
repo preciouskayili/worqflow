@@ -13,6 +13,7 @@
   "packageManager": "pnpm@10.6.2",
   "dependencies": {
     "@openai/agents": "^0.0.4",
+    "@pinecone-database/pinecone": "^6.1.0",
     "@types/bcrypt": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.9",
     "axios": "^1.9.0",
@@ -29,8 +30,10 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.15.0",
     "morgan": "^1.10.0",
+    "openai": "^5.2.0",
     "resend": "^4.5.1",
     "typescript": "^5.8.3",
+    "uuid": "^11.1.0",
     "winston": "^3.17.0",
     "zod": "^3.24.4"
   },
