@@ -10,9 +10,6 @@ import { getCalendarService } from "../utils/googleapis";
 
 const taskSchema = z.object({
   task: z.string(),
-  access_token: z.string(),
-  refresh_token: z.string(),
-  expires_at: z.string().optional(),
 });
 
 function getIntegration(userId: string) {
@@ -21,8 +18,8 @@ function getIntegration(userId: string) {
 
 export async function createTask(req: AuthRequest, res: Response) {
   try {
-    const { task } = taskSchema.parse(req.body);
-    if (!task) {
+    const result = taskSchema.safeParse(req.body);
+    if (!result.success) {
       res.status(400).json({ message: "Task is required" });
     } else {
       const integration = await getIntegration(req.user._id);
@@ -36,17 +33,18 @@ export async function createTask(req: AuthRequest, res: Response) {
         const response = await service.calendarList.list({
           maxResults: Math.min(200, 200),
         });
-        const result =
+        const calendarList =
           response.data.items?.map((c) => ({
             id: c.id!,
             name: c.summary!,
             description: c.description ?? "",
           })) || [];
 
-        res.status(200).json({ result });
+        res.status(200).json({ calendarList });
       }
     }
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: "Internal server error" });
   }
 }
