@@ -7,7 +7,7 @@ import {
 import { AuthRequest } from "../middleware/auth";
 import { IntegrationModel } from "../models/Integrations";
 import { getCalendarService } from "../utils/googleapis";
-import { saveMemory } from "../utils/vectorestore";
+import { fetchMemories } from "../tools/memoryTools";
 
 const taskSchema = z.object({
   task: z.string(),
@@ -25,7 +25,7 @@ export async function createTask(req: AuthRequest, res: Response) {
     } else {
       const { task } = result.data;
       const integration = await getIntegration(req.user._id);
-      const memory = await saveMemory(result.data.task, req.user._id);
+      const memories = await fetchMemories("Start of the world", req.user._id);
 
       if (!integration) {
         res.status(404).json({ message: "Integration not found" });
@@ -44,7 +44,7 @@ export async function createTask(req: AuthRequest, res: Response) {
             description: c.description ?? "",
           })) || [];
 
-        res.status(200).json({ memory });
+        res.status(200).json({ memories });
       }
     }
   } catch (error) {
