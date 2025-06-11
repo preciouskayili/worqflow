@@ -13,7 +13,10 @@ type UserInfo = {
 export const createCalendarList = tool({
   name: "create_calendar_list",
   description: "Creates a new calendar",
-  parameters: z.object({ calendarName: z.string() }),
+  parameters: z.object({
+    calendarName: z.string(),
+    attendees: z.array(z.string()).nullable().default(null),
+  }),
   async execute(
     args: { calendarName: string },
     runContext?: RunContext<UserInfo>
@@ -85,7 +88,7 @@ export const insertCalendarEvent = tool({
     endTime: z.string(),
     description: z.string(),
     location: z.string(),
-    attendees: z.array(z.string()).optional().nullable(),
+    attendees: z.array(z.string()).nullable().default(null),
     timezone: z.string(),
     createGoogleMeet: z.boolean(),
     userId: z.string(),
