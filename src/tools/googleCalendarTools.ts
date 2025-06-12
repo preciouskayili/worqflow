@@ -78,6 +78,145 @@ export const listCalendarEvents = tool({
   },
 });
 
+export const listEventsForDate = tool({
+  name: "list_events_for_date",
+  description: "Lists all events for a specific date in the given calendar",
+  parameters: z.object({
+    calendarId: z.string(),
+    userId: z.string(),
+    date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Expected format: YYYY-MM-DD"),
+  }),
+  async execute(
+    args: { calendarId: string; userId: string; date: string },
+    runContext?: RunContext<UserInfo>
+  ) {
+    const service = await getCalendarService(runContext?.context!);
+    const date = new Date(args.date);
+    const startOfDay = new Date(date.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(date.setHours(23, 59, 59, 999));
+
+    const res = await service.events.list({
+      calendarId: args.calendarId,
+      timeMin: startOfDay.toISOString(),
+      timeMax: endOfDay.toISOString(),
+      singleEvents: true,
+      orderBy: "startTime",
+    });
+
+    return res.data.items ?? [];
+  },
+});
+
+export const listEventsInRange = tool({
+  name: "list_events_in_range",
+  description:
+    "Lists all events within a specific date range in the given calendar",
+  parameters: z.object({
+    calendarId: z.string(),
+    userId: z.string(),
+    startDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Expected format: YYYY-MM-DD"),
+    endDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Expected format: YYYY-MM-DD"),
+  }),
+  async execute(
+    args: {
+      calendarId: string;
+      userId: string;
+      startDate: string;
+      endDate: string;
+    },
+    runContext?: RunContext<UserInfo>
+  ) {
+    const service = await getCalendarService(runContext?.context!);
+    const timeMin = new Date(args.startDate).setHours(0, 0, 0, 0);
+    const timeMax = new Date(args.endDate).setHours(23, 59, 59, 999);
+
+    const res = await service.events.list({
+      calendarId: args.calendarId,
+      timeMin: new Date(timeMin).toISOString(),
+      timeMax: new Date(timeMax).toISOString(),
+      singleEvents: true,
+      orderBy: "startTime",
+    });
+
+    return res.data.items ?? [];
+  },
+});
+
+export const listCurrentCalendarEvents = tool({
+  name: "list_current_calendar_events",
+  description:
+    "Lists events that are happening right now in the current calendar",
+  parameters: z.object({
+    calendarId: z.string(),
+    maxCapacity: z.number().int().positive(),
+    userId: z.string(),
+  }),
+  async execute(
+    args: { calendarId: string; maxCapacity: number; userId: string },
+    runContext?: RunContext<UserInfo>
+  ) {
+    const service = await getCalendarService(runContext?.context!);
+
+    const now = new Date().toISOString();
+
+    const res = await service.events.list({
+      calendarId: args.calendarId,
+      timeMin: now,
+      maxResults: args.maxCapacity,
+      singleEvents: true,
+      orderBy: "startTime",
+    });
+
+    const events = res.data.items ?? [];
+
+    const currentTime = new Date();
+
+    const ongoingEvents = events.filter((event) => {
+      const start = new Date(event.start?.dateTime || event.start?.date || "");
+      const end = new Date(event.end?.dateTime || event.end?.date || "");
+      return start <= currentTime && currentTime <= end;
+    });
+
+    return ongoingEvents;
+  },
+});
+
+export const listTodaysEvents = tool({
+  name: "list_todays_events",
+  description: "Lists all events happening today in the given calendar",
+  parameters: z.object({
+    calendarId: z.string(),
+    userId: z.string(),
+  }),
+  async execute(
+    args: { calendarId: string; userId: string },
+    runContext?: RunContext<UserInfo>
+  ) {
+    const service = await getCalendarService(runContext?.context!);
+    const now = new Date();
+    const startOfDay = new Date(now);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(now);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const res = await service.events.list({
+      calendarId: args.calendarId,
+      timeMin: startOfDay.toISOString(),
+      timeMax: endOfDay.toISOString(),
+      singleEvents: true,
+      orderBy: "startTime",
+    });
+
+    return res.data.items ?? [];
+  },
+});
+
 export const insertCalendarEvent = tool({
   name: "insert_calendar_event",
   description: "Inserts an event into a calendar",

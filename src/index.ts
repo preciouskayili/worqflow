@@ -1,5 +1,10 @@
 import cors from "cors";
-import express, { Request, Response, NextFunction } from "express";
+import express, {
+  Request,
+  Response,
+  NextFunction,
+  RequestHandler,
+} from "express";
 import router from "./routes";
 import helmet from "helmet";
 import morgan from "morgan";
@@ -25,7 +30,7 @@ app.use(
   morgan("dev", { stream: { write: (message) => logger.info(message) } })
 );
 app.set("trust proxy", 1 /* number of proxies between user and server */);
-app.use(compression());
+app.use(compression() as unknown as RequestHandler);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
