@@ -1,6 +1,7 @@
 import { tool } from "@openai/agents";
 import { z } from "zod";
 import { getCalendarService } from "../utils/googleapis";
+import { getDayBoundsInUTC, formatEvent } from "../utils/misc";
 import { calendar_v3 } from "googleapis";
 import { RunContext } from "@openai/agents";
 
@@ -17,10 +18,7 @@ export const createCalendarList = tool({
     calendarName: z.string(),
     attendees: z.array(z.string()).nullable().default(null),
   }),
-  async execute(
-    args: { calendarName: string },
-    runContext?: RunContext<UserInfo>
-  ) {
+  async execute(args, runContext?: RunContext<UserInfo>) {
     const service = await getCalendarService(runContext?.context!);
     const res = await service.calendars.insert({
       requestBody: { summary: args.calendarName },
@@ -32,19 +30,17 @@ export const createCalendarList = tool({
 
 export const listCalendarList = tool({
   name: "list_calendar_list",
-  description: "Lists calendars available",
+  description: "Lists all the calendars available",
   parameters: z.object({
     maxCapacity: z.number().int().positive(),
     userId: z.string(),
   }),
-  async execute(
-    args: { maxCapacity: number; userId: string },
-    runContext?: RunContext<UserInfo>
-  ) {
+  async execute(args, runContext?: RunContext<UserInfo>) {
     const service = await getCalendarService(runContext?.context!);
     const res = await service.calendarList.list({
       maxResults: Math.min(200, args.maxCapacity),
     });
+    console.log("List calendar list", res.data.items);
     return (
       res.data.items?.map((c) => ({
         id: c.id!,
@@ -57,16 +53,13 @@ export const listCalendarList = tool({
 
 export const listCalendarEvents = tool({
   name: "list_calendar_events",
-  description: "Lists events in a calendar",
+  description: "Lists all the events in a calendar",
   parameters: z.object({
     calendarId: z.string(),
     maxCapacity: z.number().int().positive(),
     userId: z.string(),
   }),
-  async execute(
-    args: { calendarId: string; maxCapacity: number; userId: string },
-    runContext?: RunContext<UserInfo>
-  ) {
+  async execute(args, runContext?: RunContext<UserInfo>) {
     const service = await getCalendarService(runContext?.context!);
     const res = await service.events.list({
       calendarId: args.calendarId,
@@ -74,7 +67,8 @@ export const listCalendarEvents = tool({
       singleEvents: true,
       orderBy: "startTime",
     });
-    return res.data.items || [];
+    console.log("List calendar events", res.data.items);
+    return res.data.items?.map(formatEvent) || [];
   },
 });
 
@@ -88,24 +82,20 @@ export const listEventsForDate = tool({
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Expected format: YYYY-MM-DD"),
   }),
-  async execute(
-    args: { calendarId: string; userId: string; date: string },
-    runContext?: RunContext<UserInfo>
-  ) {
+  async execute(args, runContext?: RunContext<UserInfo>) {
     const service = await getCalendarService(runContext?.context!);
     const date = new Date(args.date);
-    const startOfDay = new Date(date.setHours(0, 0, 0, 0));
-    const endOfDay = new Date(date.setHours(23, 59, 59, 999));
+    const { timeMin, timeMax } = getDayBoundsInUTC(date, "Africa/Lagos");
 
     const res = await service.events.list({
       calendarId: args.calendarId,
-      timeMin: startOfDay.toISOString(),
-      timeMax: endOfDay.toISOString(),
+      timeMin,
+      timeMax,
       singleEvents: true,
       orderBy: "startTime",
     });
-
-    return res.data.items ?? [];
+    console.log("List events for date", res.data.items);
+    return res.data.items?.map(formatEvent) || [];
   },
 });
 
@@ -123,28 +113,27 @@ export const listEventsInRange = tool({
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Expected format: YYYY-MM-DD"),
   }),
-  async execute(
-    args: {
-      calendarId: string;
-      userId: string;
-      startDate: string;
-      endDate: string;
-    },
-    runContext?: RunContext<UserInfo>
-  ) {
+  async execute(args, runContext?: RunContext<UserInfo>) {
     const service = await getCalendarService(runContext?.context!);
-    const timeMin = new Date(args.startDate).setHours(0, 0, 0, 0);
-    const timeMax = new Date(args.endDate).setHours(23, 59, 59, 999);
+    const { timeMin } = getDayBoundsInUTC(
+      new Date(args.startDate),
+      "Africa/Lagos"
+    );
+
+    const { timeMax } = getDayBoundsInUTC(
+      new Date(args.endDate),
+      "Africa/Lagos"
+    );
 
     const res = await service.events.list({
       calendarId: args.calendarId,
-      timeMin: new Date(timeMin).toISOString(),
-      timeMax: new Date(timeMax).toISOString(),
+      timeMin,
+      timeMax,
       singleEvents: true,
       orderBy: "startTime",
     });
-
-    return res.data.items ?? [];
+    console.log("List events in range", res.data.items);
+    return res.data.items?.map(formatEvent) || [];
   },
 });
 
@@ -157,33 +146,28 @@ export const listCurrentCalendarEvents = tool({
     maxCapacity: z.number().int().positive(),
     userId: z.string(),
   }),
-  async execute(
-    args: { calendarId: string; maxCapacity: number; userId: string },
-    runContext?: RunContext<UserInfo>
-  ) {
+  async execute(args, runContext?: RunContext<UserInfo>) {
     const service = await getCalendarService(runContext?.context!);
-
-    const now = new Date().toISOString();
+    const { timeMin } = getDayBoundsInUTC(new Date(), "Africa/Lagos");
 
     const res = await service.events.list({
       calendarId: args.calendarId,
-      timeMin: now,
+      timeMin,
       maxResults: args.maxCapacity,
       singleEvents: true,
       orderBy: "startTime",
     });
 
     const events = res.data.items ?? [];
+    const now = new Date();
 
-    const currentTime = new Date();
-
-    const ongoingEvents = events.filter((event) => {
-      const start = new Date(event.start?.dateTime || event.start?.date || "");
-      const end = new Date(event.end?.dateTime || event.end?.date || "");
-      return start <= currentTime && currentTime <= end;
+    const ongoing = events.filter((e) => {
+      const start = new Date(e.start?.dateTime || e.start?.date || "");
+      const end = new Date(e.end?.dateTime || e.end?.date || "");
+      return start <= now && now <= end;
     });
-
-    return ongoingEvents;
+    console.log("List current calendar events", ongoing);
+    return ongoing.map(formatEvent);
   },
 });
 
@@ -194,26 +178,19 @@ export const listTodaysEvents = tool({
     calendarId: z.string(),
     userId: z.string(),
   }),
-  async execute(
-    args: { calendarId: string; userId: string },
-    runContext?: RunContext<UserInfo>
-  ) {
+  async execute(args, runContext?: RunContext<UserInfo>) {
     const service = await getCalendarService(runContext?.context!);
-    const now = new Date();
-    const startOfDay = new Date(now);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(now);
-    endOfDay.setHours(23, 59, 59, 999);
+    const { timeMin, timeMax } = getDayBoundsInUTC(new Date(), "Africa/Lagos");
 
     const res = await service.events.list({
       calendarId: args.calendarId,
-      timeMin: startOfDay.toISOString(),
-      timeMax: endOfDay.toISOString(),
+      timeMin,
+      timeMax,
       singleEvents: true,
       orderBy: "startTime",
     });
-
-    return res.data.items ?? [];
+    console.log("List todays events", res.data.items);
+    return res.data.items?.map(formatEvent) || [];
   },
 });
 
@@ -232,21 +209,7 @@ export const insertCalendarEvent = tool({
     createGoogleMeet: z.boolean(),
     userId: z.string(),
   }),
-  async execute(
-    args: {
-      calendarId: string;
-      summary: string;
-      startTime: string;
-      endTime: string;
-      description: string;
-      location: string;
-      attendees: string[];
-      timezone: string;
-      createGoogleMeet: boolean;
-      userId: string;
-    },
-    runContext?: RunContext<UserInfo>
-  ) {
+  async execute(args, runContext?: RunContext<UserInfo>) {
     const service = await getCalendarService(runContext?.context!);
 
     const eventBody: calendar_v3.Schema$Event = {
@@ -271,6 +234,27 @@ export const insertCalendarEvent = tool({
       requestBody: eventBody,
       conferenceDataVersion: args.createGoogleMeet ? 1 : undefined,
     });
+    console.log("Insert calendar event", res.data);
+    return formatEvent(res.data);
+  },
+});
+
+export const deleteCalendarEvent = tool({
+  name: "delete_calendar_event",
+  description: "Deletes an event from a calendar",
+  parameters: z.object({
+    calendarId: z.string(),
+    eventId: z.string(),
+    userId: z.string(),
+  }),
+  async execute(args, runContext?: RunContext<UserInfo>) {
+    const service = await getCalendarService(runContext?.context!);
+
+    const res = await service.events.delete({
+      calendarId: args.calendarId,
+      eventId: args.eventId,
+    });
+    console.log("Delete calendar event", res.data);
     return res.data;
   },
 });

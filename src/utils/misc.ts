@@ -1,3 +1,5 @@
+import { calendar_v3 } from "googleapis";
+
 export function getDayBoundsInUTC(date: Date, timeZone: string) {
   const localeDate = new Intl.DateTimeFormat("en-US", {
     timeZone,
@@ -21,4 +23,17 @@ export function getDayBoundsInUTC(date: Date, timeZone: string) {
   );
 
   return { timeMin: utcStart.toISOString(), timeMax: utcEnd.toISOString() };
+}
+
+export function formatEvent(event: calendar_v3.Schema$Event) {
+  const start = event.start?.dateTime || event.start?.date;
+  const end = event.end?.dateTime || event.end?.date;
+
+  const title = event.summary || "Untitled event";
+  const location = event.location ? ` at ${event.location}` : "";
+  const attendees = event.attendees?.length
+    ? ` with ${event.attendees.map((a) => a.email).join(", ")}`
+    : "";
+
+  return `${title} — ${start} to ${end}${location}${attendees}`;
 }

@@ -8,6 +8,7 @@ const UserSchema = new Schema(
     refreshToken: { type: String },
     magicLinkToken: { type: String },
     magicLinkExpires: { type: Date },
+    timeZone: { type: String },
   },
   { timestamps: true }
 );

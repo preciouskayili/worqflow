@@ -4,6 +4,10 @@ import {
   listCalendarEvents,
   insertCalendarEvent,
   createCalendarList,
+  deleteCalendarEvent,
+  listCurrentCalendarEvents,
+  listTodaysEvents,
+  listEventsInRange,
 } from "../tools/googleCalendarTools";
 import { CALENDAR_AGENT_PROMPT } from "../utils/prompts";
 
@@ -15,5 +19,9 @@ export const calendarAgent = new Agent({
     listCalendarEvents,
     insertCalendarEvent,
     createCalendarList,
+    deleteCalendarEvent,
+    listCurrentCalendarEvents,
+    listTodaysEvents,
+    listEventsInRange,
   ],
 });
