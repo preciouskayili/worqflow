@@ -40,7 +40,6 @@ export const listCalendarList = tool({
     const res = await service.calendarList.list({
       maxResults: Math.min(200, args.maxCapacity),
     });
-    console.log("List calendar list", res.data.items);
     return (
       res.data.items?.map((c) => ({
         id: c.id!,
@@ -67,7 +66,6 @@ export const listCalendarEvents = tool({
       singleEvents: true,
       orderBy: "startTime",
     });
-    console.log("List calendar events", res.data.items);
     return res.data.items?.map(formatEvent) || [];
   },
 });
@@ -94,7 +92,6 @@ export const listEventsForDate = tool({
       singleEvents: true,
       orderBy: "startTime",
     });
-    console.log("List events for date", res.data.items);
     return res.data.items?.map(formatEvent) || [];
   },
 });
@@ -132,7 +129,6 @@ export const listEventsInRange = tool({
       singleEvents: true,
       orderBy: "startTime",
     });
-    console.log("List events in range", res.data.items);
     return res.data.items?.map(formatEvent) || [];
   },
 });
@@ -166,7 +162,6 @@ export const listCurrentCalendarEvents = tool({
       const end = new Date(e.end?.dateTime || e.end?.date || "");
       return start <= now && now <= end;
     });
-    console.log("List current calendar events", ongoing);
     return ongoing.map(formatEvent);
   },
 });
@@ -189,7 +184,6 @@ export const listTodaysEvents = tool({
       singleEvents: true,
       orderBy: "startTime",
     });
-    console.log("List todays events", res.data.items);
     return res.data.items?.map(formatEvent) || [];
   },
 });
@@ -234,7 +228,6 @@ export const insertCalendarEvent = tool({
       requestBody: eventBody,
       conferenceDataVersion: args.createGoogleMeet ? 1 : undefined,
     });
-    console.log("Insert calendar event", res.data);
     return formatEvent(res.data);
   },
 });
@@ -254,7 +247,25 @@ export const deleteCalendarEvent = tool({
       calendarId: args.calendarId,
       eventId: args.eventId,
     });
-    console.log("Delete calendar event", res.data);
+    return res.data;
+  },
+});
+
+export const updateCalendarEvent = tool({
+  name: "update_calendar_event",
+  description: "Updates an event in a calendar",
+  parameters: z.object({
+    calendarId: z.string(),
+    eventId: z.string(),
+    userId: z.string(),
+  }),
+  async execute(args, runContext?: RunContext<UserInfo>) {
+    const service = await getCalendarService(runContext?.context!);
+    const res = await service.events.update({
+      calendarId: args.calendarId,
+      eventId: args.eventId,
+      requestBody: args.event,
+    });
     return res.data;
   },
 });

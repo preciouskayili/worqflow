@@ -30,7 +30,17 @@ app.use(
   morgan("dev", { stream: { write: (message) => logger.info(message) } })
 );
 app.set("trust proxy", 1 /* number of proxies between user and server */);
-app.use(compression() as unknown as RequestHandler);
+function shouldCompress(req: any, res: any) {
+  if (req.headers["x-no-compression"]) {
+    // don't compress responses with this request header
+    return false;
+  }
+
+  // fallback to standard filter function
+  return compression.filter(req, res);
+}
+
+app.use(compression({ filter: shouldCompress }) as unknown as RequestHandler);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

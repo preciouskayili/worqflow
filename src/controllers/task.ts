@@ -4,8 +4,6 @@ import { AuthRequest } from "../middleware/auth";
 import { IntegrationModel } from "../models/Integrations";
 import { mainAgent } from "../agents/main";
 import { run } from "@openai/agents";
-import { getCalendarService } from "../utils/googleapis";
-import { getDayBoundsInUTC } from "../utils/misc";
 
 const taskSchema = z.object({
   task: z.string(),
@@ -35,7 +33,7 @@ export async function createTask(req: AuthRequest, res: Response) {
           },
         });
 
-        res.status(200).json({ output });
+        res.status(200).json(output);
       }
     }
   } catch (error) {
