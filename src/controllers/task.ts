@@ -1,43 +1,47 @@
+// controllers/taskController.ts
 import { Response } from "express";
 import { z } from "zod";
 import { AuthRequest } from "../middleware/auth";
-import { ChatMessageModel, ThreadModel } from "../models/Chat";
+import { ThreadModel, ChatMessageModel } from "../models/Chat";
 
 const taskSchema = z.object({
-  task: z.string(),
+  task: z.string().min(1),
   threadId: z.string().optional(),
 });
 
 export async function createTask(req: AuthRequest, res: Response) {
+  const parsed = taskSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Task is required" });
+    return;
+  }
+
+  const { task, threadId } = parsed.data;
+
   try {
-    const result = taskSchema.safeParse(req.body);
-    if (!result.success) {
-      res.status(400).json({ message: "Task is required" });
-    } else {
-      const { task, threadId } = result.data;
+    // Find existing thread or create a new one
+    let thread = threadId ? await ThreadModel.findById(threadId) : null;
 
-      if (threadId) {
-        let thread = await ThreadModel.findById(threadId);
-
-        if (!thread) {
-          thread = await ThreadModel.create({
-            user_id: req.user._id,
-            title: "New Thread",
-          });
-        }
-
-        const taskDoc = await ChatMessageModel.create({
-          user_id: req.user._id,
-          thread: thread._id,
-          task: task,
-          status: "pending",
-        });
-
-        res.status(200).json({ message: "Task created", task: taskDoc });
-      }
+    if (!thread) {
+      thread = await ThreadModel.create({
+        userId: req.user._id,
+        title: "New Thread",
+      });
     }
-  } catch (error) {
-    console.log(error);
+
+    const message = await ChatMessageModel.create({
+      thread: thread._id,
+      user: req.user._id,
+      role: "user",
+      content: task,
+    });
+
+    res.status(201).json({
+      message: "Task recorded",
+      data: { threadId: thread._id, messageId: message._id },
+    });
+  } catch (err: any) {
+    console.error(err);
     res.status(500).json({ message: "Internal server error" });
   }
 }
