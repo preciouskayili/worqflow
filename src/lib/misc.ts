@@ -1,4 +1,5 @@
 import { calendar_v3 } from "googleapis";
+import { IntegrationModel } from "../models/Integrations";
 
 export function getDayBoundsInUTC(date: Date, timeZone: string) {
   const localeDate = new Intl.DateTimeFormat("en-US", {
@@ -23,6 +24,10 @@ export function getDayBoundsInUTC(date: Date, timeZone: string) {
   );
 
   return { timeMin: utcStart.toISOString(), timeMax: utcEnd.toISOString() };
+}
+
+export async function getIntegration(userId: string) {
+  return IntegrationModel.findOne({ user_id: userId }).lean();
 }
 
 export function formatEvent(event: calendar_v3.Schema$Event) {

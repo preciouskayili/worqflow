@@ -11,8 +11,8 @@ import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import compression from "compression";
 import dotenv from "dotenv";
-import { logger } from "./utils/logger";
-import { connectDB } from "./utils/db";
+import { logger } from "./lib/logger";
+import { connectDB } from "./lib/db";
 import { env } from "./config/env";
 
 dotenv.config();

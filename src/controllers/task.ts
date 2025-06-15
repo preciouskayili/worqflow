@@ -1,17 +1,12 @@
 import { Response } from "express";
 import { z } from "zod";
 import { AuthRequest } from "../middleware/auth";
-import { IntegrationModel } from "../models/Integrations";
-import { mainAgent } from "../agents/main";
-import { run } from "@openai/agents";
+import { ChatMessageModel, ThreadModel } from "../models/Chat";
 
 const taskSchema = z.object({
   task: z.string(),
+  threadId: z.string().optional(),
 });
-
-async function getIntegration(userId: string) {
-  return IntegrationModel.findOne({ user_id: userId }).lean();
-}
 
 export async function createTask(req: AuthRequest, res: Response) {
   try {
@@ -19,21 +14,26 @@ export async function createTask(req: AuthRequest, res: Response) {
     if (!result.success) {
       res.status(400).json({ message: "Task is required" });
     } else {
-      const { task } = result.data;
-      const integration = await getIntegration(req.user._id);
+      const { task, threadId } = result.data;
 
-      if (!integration) {
-        res.status(404).json({ message: "Integration not found" });
-      } else {
-        const { output } = await run(mainAgent, task, {
-          context: {
-            userId: req.user._id,
-            access_token: integration.access_token!,
-            refresh_token: integration.refresh_token!,
-          },
+      if (threadId) {
+        let thread = await ThreadModel.findById(threadId);
+
+        if (!thread) {
+          thread = await ThreadModel.create({
+            user_id: req.user._id,
+            title: "New Thread",
+          });
+        }
+
+        const taskDoc = await ChatMessageModel.create({
+          user_id: req.user._id,
+          thread: thread._id,
+          task: task,
+          status: "pending",
         });
 
-        res.status(200).json(output);
+        res.status(200).json({ message: "Task created", task: taskDoc });
       }
     }
   } catch (error) {

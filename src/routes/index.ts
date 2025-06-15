@@ -23,7 +23,7 @@ router.use(
   "/streams",
   requireAuth,
   (req, _res, next) => {
-    req.headers["x-no-compression"] = "1"; // this disables compression early
+    req.headers["x-no-compression"] = "1"; // disables compression early on the event route
     next();
   },
   eventsRouter

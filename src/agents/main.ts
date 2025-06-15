@@ -1,5 +1,5 @@
 import { Agent } from "@openai/agents";
-import { MAIN_AGENT_PROMPT } from "../utils/prompts";
+import { MAIN_AGENT_PROMPT } from "../lib/prompts";
 import { MODEL } from "../config/env";
 import { calendarAgent } from "./calendar";
 import { memoryAgent } from "./memory";

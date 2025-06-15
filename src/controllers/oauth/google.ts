@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getGoogleOAuthUrl, getGoogleToken } from "../../utils/googleapis.ts";
+import { getGoogleOAuthUrl, getGoogleToken } from "../../lib/googleapis.ts";
 import { IntegrationModel } from "../../models/Integrations.ts";
 import { AuthRequest } from "../../middleware/auth";
 

@@ -9,7 +9,7 @@ import {
   listTodaysEvents,
   listEventsInRange,
 } from "../tools/googleCalendarTools";
-import { CALENDAR_AGENT_PROMPT } from "../utils/prompts";
+import { CALENDAR_AGENT_PROMPT } from "../lib/prompts";
 
 export const calendarAgent = new Agent({
   name: "calendar_agent",

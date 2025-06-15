@@ -1,7 +1,7 @@
 import { tool } from "@openai/agents";
 import { z } from "zod";
-import { getCalendarService } from "../utils/googleapis";
-import { getDayBoundsInUTC, formatEvent } from "../utils/misc";
+import { getCalendarService } from "../lib/googleapis";
+import { getDayBoundsInUTC, formatEvent } from "../lib/misc";
 import { calendar_v3 } from "googleapis";
 import { RunContext } from "@openai/agents";
 

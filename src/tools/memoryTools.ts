@@ -1,5 +1,5 @@
-import { getEmbedding, saveMemory } from "../utils/vectorestore";
-import { pc } from "../utils/vectorestore";
+import { getEmbedding, saveMemory } from "../lib/vectorestore";
+import { pc } from "../lib/vectorestore";
 import { env } from "../config/env";
 import { tool } from "@openai/agents";
 import { z } from "zod";

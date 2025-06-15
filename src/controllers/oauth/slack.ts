@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { getSlackOAuthUrl, getSlackToken } from "../../utils/slackapis";
+import { getSlackOAuthUrl, getSlackToken } from "../../lib/slackapis";
 import { IntegrationModel } from "../../models/Integrations";
 import { AuthRequest } from "../../middleware/auth";
 import { SLACK_SCOPES } from "../../config/slack_scopes";

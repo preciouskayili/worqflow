@@ -15,6 +15,11 @@ const ChatMessageSchema = new Schema(
     user: { type: Types.ObjectId, required: true, ref: "User" },
     role: { type: String, enum: ["user", "agent"], required: true },
     content: { type: String, required: true },
+    status: {
+      type: String,
+      enum: ["pending", "completed", "failed"],
+      default: "pending",
+    },
   },
   { timestamps: true }
 );
