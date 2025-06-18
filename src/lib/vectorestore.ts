@@ -3,9 +3,10 @@ import { Pinecone } from "@pinecone-database/pinecone";
 import openai from "./openai";
 import { v4 as uuidv4 } from "uuid";
 import { ChatMessageModel } from "../models/Chat";
-import { ObjectId } from "mongoose";
+
 export const pc = new Pinecone({ apiKey: env.PINECONE_API_KEY });
-const INDEX_NAME = env.PINECONE_INDEX_NAME;
+
+const INDEX_NAME = env.INDEX_NAME;
 const EMDBEDDING_DIMENSION = 1536;
 
 export async function createStore() {
