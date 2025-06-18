@@ -5,7 +5,7 @@ import { mainAgent } from "../../agents/main";
 import { run } from "@openai/agents";
 import { ChatMessageModel, ThreadModel } from "../../models/Chat";
 import { z } from "zod";
-import { getRelevantMessages } from "../../lib/vectorestore";
+import { getRelevantMessages, saveChatHistory } from "../../lib/vectorestore";
 
 const paramsSchema = z.object({
   threadId: z.string(),
@@ -48,6 +48,7 @@ export async function messageEvents(req: AuthRequest, res: Response) {
     user: req.user._id,
     thread: threadId,
   });
+
   if (!userMsg) {
     res.write(
       `event: error\ndata: ${JSON.stringify({
@@ -76,17 +77,25 @@ export async function messageEvents(req: AuthRequest, res: Response) {
     10
   );
 
-  const history = context.map((m) => m.content).join("\n\n");
+  const historyText = context.length
+    ? `<history>${context.map((m) => m.content).join("\n\n")}</history>`
+    : "";
 
   try {
-    const result = await run(mainAgent, userMsg.content, {
-      context: {
-        userId: req.user._id,
-        access_token: integration.access_token!,
-        refresh_token: integration.refresh_token!,
-      },
-      stream: true,
-    });
+    const result = await run(
+      mainAgent,
+      `User: \n${req.user.name ?? "[Not Provided]"}\n${
+        req.user.email
+      }\n\nMessage: ${userMsg.content}\n\n${historyText}`,
+      {
+        context: {
+          userId: req.user._id,
+          access_token: integration.access_token!,
+          refresh_token: integration.refresh_token!,
+        },
+        stream: true,
+      }
+    );
 
     for await (const event of result) {
       if (event.type === "raw_model_stream_event") {
@@ -105,6 +114,13 @@ export async function messageEvents(req: AuthRequest, res: Response) {
         );
       }
     }
+
+    await saveChatHistory(
+      result.finalOutput!,
+      req.user._id.toString(),
+      threadId,
+      "agent"
+    );
 
     res.end();
   } catch (err: any) {

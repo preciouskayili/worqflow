@@ -77,6 +77,7 @@ export async function getGoogleOAuthUrl(scopes: string[], state?: string) {
     access_type: "offline",
     scope: scopes,
     state,
+    prompt: "consent",
   });
 
   return url;

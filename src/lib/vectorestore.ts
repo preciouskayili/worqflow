@@ -79,8 +79,10 @@ export async function saveChatHistory(
       values: embedding,
       metadata: {
         user_id: userId,
+        thread_id: threadId,
         timestamp: new Date().toISOString(),
         role,
+        message_id: msg._id.toString(),
       },
     },
   ]);
@@ -102,20 +104,29 @@ export async function getRelevantMessages(
     includeMetadata: true,
     filter: {
       user_id: userId,
-      thread: threadId,
+      thread_id: threadId,
     },
   });
 
-  const ids = result.matches?.map((match) => match.id);
+  const matchedIds =
+    result.matches?.map((match) => match.metadata?.message_id) || [];
 
   const messages = await ChatMessageModel.find({
-    _id: { $in: ids },
-  });
+    user: userId,
+    thread: threadId,
+    _id: { $in: matchedIds },
+  })
+    .sort({ createdAt: -1 })
+    .limit(limit);
 
   return messages;
 }
 
-export async function fetchMemory(text: string, userId: string, limit: number) {
+export async function getRelevantMemories(
+  text: string,
+  userId: string,
+  limit: number
+) {
   const index = pc.index(INDEX_NAME);
 
   const query = await index.query({
