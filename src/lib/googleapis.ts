@@ -72,6 +72,34 @@ export async function getCalendarService(integration: {
   return google.calendar({ version: "v3", auth: client });
 }
 
+export async function getGmailService(integration: {
+  access_token: string;
+  refresh_token: string;
+  expires_at?: string;
+}) {
+  if (!integration) throw new Error("No Google integration found");
+
+  const client = new OAuth2Client(
+    env.GOOGLE_CLIENT_ID,
+    env.GOOGLE_CLIENT_SECRET,
+    env.GOOGLE_REDIRECT_URI
+  );
+
+  client.setCredentials({
+    access_token: integration.access_token!,
+    refresh_token: integration.refresh_token!,
+    expiry_date: integration.expires_at
+      ? new Date(integration.expires_at).getTime()
+      : 0,
+  });
+
+  await refreshAndSaveTokens(client, integration);
+
+  await client.getAccessToken();
+
+  return google.gmail({ version: "v1", auth: client });
+}
+
 export async function getGoogleOAuthUrl(scopes: string[], state?: string) {
   const url = auth.generateAuthUrl({
     access_type: "offline",
