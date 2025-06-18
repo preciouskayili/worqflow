@@ -5,7 +5,7 @@ import { tool } from "@openai/agents";
 import { z } from "zod";
 import { RunContext } from "@openai/agents";
 
-const INDEX_NAME = env.PINECONE_INDEX_NAME;
+const INDEX_NAME = env.INDEX_NAME;
 
 export const fetchMemories = tool({
   name: "fetch_memories",

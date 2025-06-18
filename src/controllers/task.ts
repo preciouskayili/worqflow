@@ -1,8 +1,8 @@
-// controllers/taskController.ts
 import { Response } from "express";
 import { z } from "zod";
 import { AuthRequest } from "../middleware/auth";
-import { ThreadModel, ChatMessageModel } from "../models/Chat";
+import { ThreadModel } from "../models/Chat";
+import { saveChatHistory } from "../lib/vectorestore";
 
 const taskSchema = z.object({
   task: z.string().min(1),
@@ -29,12 +29,12 @@ export async function createTask(req: AuthRequest, res: Response) {
       });
     }
 
-    const message = await ChatMessageModel.create({
-      thread: thread._id,
-      user: req.user._id,
-      role: "user",
-      content: task,
-    });
+    const message = await saveChatHistory(
+      task,
+      req.user._id.toString(),
+      thread._id.toString(),
+      "user"
+    );
 
     res.status(201).json({
       message: "Task recorded",

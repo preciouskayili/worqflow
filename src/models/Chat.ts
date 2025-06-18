@@ -15,6 +15,7 @@ const ChatMessageSchema = new Schema(
     user: { type: Types.ObjectId, required: true, ref: "User" },
     role: { type: String, enum: ["user", "agent"], required: true },
     content: { type: String, required: true },
+    embedding: { type: [Number], required: true, index: true },
     status: {
       type: String,
       enum: ["pending", "completed", "failed"],
@@ -23,6 +24,8 @@ const ChatMessageSchema = new Schema(
   },
   { timestamps: true }
 );
+
+ChatMessageSchema.index({ embedding: "2dsphere" });
 
 export const ThreadModel = model("Thread", ThreadSchema);
 export const ChatMessageModel = model("ChatMessage", ChatMessageSchema);

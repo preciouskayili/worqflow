@@ -5,6 +5,7 @@ import { mainAgent } from "../../agents/main";
 import { run } from "@openai/agents";
 import { ChatMessageModel, ThreadModel } from "../../models/Chat";
 import { z } from "zod";
+import { getRelevantMessages } from "../../lib/vectorestore";
 
 const paramsSchema = z.object({
   threadId: z.string(),
@@ -67,6 +68,15 @@ export async function messageEvents(req: AuthRequest, res: Response) {
     res.end();
     return;
   }
+
+  const context = await getRelevantMessages(
+    userMsg.content,
+    req.user._id.toString(),
+    threadId,
+    10
+  );
+
+  const history = context.map((m) => m.content).join("\n\n");
 
   try {
     const result = await run(mainAgent, userMsg.content, {
