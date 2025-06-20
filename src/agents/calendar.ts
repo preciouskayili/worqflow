@@ -1,27 +1,9 @@
 import { Agent } from "@openai/agents";
-import {
-  listCalendarList,
-  listCalendarEvents,
-  insertCalendarEvent,
-  createCalendarList,
-  deleteCalendarEvent,
-  listCurrentCalendarEvents,
-  listTodaysEvents,
-  listEventsInRange,
-} from "../tools/googleCalendarTools";
+import * as calendarTools from "../tools/googleCalendarTools";
 import { CALENDAR_AGENT_PROMPT } from "../lib/prompts";
 
 export const calendarAgent = new Agent({
   name: "calendar_agent",
   instructions: CALENDAR_AGENT_PROMPT,
-  tools: [
-    listCalendarList,
-    listCalendarEvents,
-    insertCalendarEvent,
-    createCalendarList,
-    deleteCalendarEvent,
-    listCurrentCalendarEvents,
-    listTodaysEvents,
-    listEventsInRange,
-  ],
+  tools: [...Object.values(calendarTools)],
 });

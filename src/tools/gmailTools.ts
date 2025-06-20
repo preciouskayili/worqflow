@@ -2,7 +2,7 @@ import { tool } from "@openai/agents";
 import { z } from "zod";
 import { getGmailService } from "../lib/googleapis";
 import { RunContext } from "@openai/agents";
-import { gmail_v1 } from "googleapis";
+import { encode } from "../lib/misc";
 
 type UserInfo = {
   access_token: string;
@@ -10,203 +10,376 @@ type UserInfo = {
   expires_at?: string;
 };
 
-export const listEmails = tool({
-  name: "list_emails",
-  description: "Lists emails from the user's inbox with optional filtering",
+export const sendEmail = tool({
+  name: "send_email",
+  description: "Sends an email",
   parameters: z.object({
-    maxResults: z.number().int().positive().default(10),
-    query: z.string().optional(),
-    labelIds: z.array(z.string()).optional(),
-    includeSpamTrash: z.boolean().default(false),
+    to: z.string().describe("Email address of the recipient"),
+    subject: z.string().describe("Subject of the email"),
+    message: z.string().describe("Plain text content of the email"),
   }),
   async execute(args, runContext?: RunContext<UserInfo>) {
     const service = await getGmailService(runContext?.context!);
 
-    const response = await service.users.messages.list({
+    const raw = Buffer.from(
+      `To: ${args.to}\r\n` +
+        `Subject: ${args.subject}\r\n\r\n` +
+        `${args.message}`
+    ).toString("base64url");
+
+    const res = await service.users.messages.send({
       userId: "me",
-      maxResults: args.maxResults,
-      q: args.query,
-      labelIds: args.labelIds,
-      includeSpamTrash: args.includeSpamTrash,
+      requestBody: { raw },
     });
 
-    const messages = response.data.messages || [];
+    return res.data;
+  },
+});
+
+export const listEmails = tool({
+  name: "list_emails",
+  description: "Lists recent emails",
+  parameters: z.object({
+    query: z
+      .string()
+      .default("")
+      .nullable()
+      .describe("Search query (e.g., 'from:someone@example.com')"),
+    maxResults: z.number().min(1).max(20).default(5),
+  }),
+  async execute(args, runContext?: RunContext<UserInfo>) {
+    const service = await getGmailService(runContext?.context!);
+
+    const res = await service.users.messages.list({
+      userId: "me",
+      q: args.query,
+      maxResults: args.maxResults,
+    });
+
+    const messages = res.data.messages || [];
+
     const detailedMessages = await Promise.all(
-      messages.map(async (message) => {
-        const details = await service.users.messages.get({
+      messages.map(async (msg) => {
+        const full = await service.users.messages.get({
           userId: "me",
-          id: message.id!,
+          id: msg.id!,
+          format: "metadata",
+          metadataHeaders: ["Subject", "From"],
         });
-        return formatEmail(details.data);
+        return {
+          id: msg.id,
+          snippet: full.data.snippet,
+          headers: full.data.payload?.headers,
+        };
       })
     );
+
+    console.log(detailedMessages);
 
     return detailedMessages;
   },
 });
 
-export const getEmail = tool({
-  name: "get_email",
-  description: "Gets a specific email by its ID",
+export const readEmail = tool({
+  name: "read_email",
+  description: "Reads a specific email by ID",
   parameters: z.object({
-    messageId: z.string(),
+    messageId: z.string().describe("ID of the email to read"),
   }),
   async execute(args, runContext?: RunContext<UserInfo>) {
     const service = await getGmailService(runContext?.context!);
 
-    const response = await service.users.messages.get({
+    const res = await service.users.messages.get({
       userId: "me",
       id: args.messageId,
+      format: "full",
     });
 
-    return formatEmail(response.data);
+    return {
+      id: res.data.id,
+      snippet: res.data.snippet,
+      payload: res.data.payload,
+    };
   },
 });
 
-export const sendEmail = tool({
-  name: "send_email",
-  description: "Sends an email to specified recipients",
+export const createDraft = tool({
+  name: "create_draft",
+  description: "Creates a draft email",
   parameters: z.object({
-    to: z.array(z.string()),
+    to: z.string(),
     subject: z.string(),
-    body: z.string(),
-    cc: z.array(z.string()).optional(),
-    bcc: z.array(z.string()).optional(),
-    replyTo: z.string().optional(),
+    message: z.string(),
   }),
   async execute(args, runContext?: RunContext<UserInfo>) {
     const service = await getGmailService(runContext?.context!);
 
-    const message = createEmailMessage(args);
-    const encodedMessage = Buffer.from(message)
-      .toString("base64")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_");
+    const raw = Buffer.from(
+      `To: ${args.to}\r\n` +
+        `Subject: ${args.subject}\r\n\r\n` +
+        `${args.message}`
+    ).toString("base64url");
 
-    const response = await service.users.messages.send({
+    const res = await service.users.drafts.create({
       userId: "me",
       requestBody: {
-        raw: encodedMessage,
+        message: {
+          raw,
+        },
       },
     });
 
-    return {
-      messageId: response.data.id,
-      threadId: response.data.threadId,
-      labelIds: response.data.labelIds,
-      success: true,
-    };
+    return res.data;
   },
 });
 
-export const replyToEmail = tool({
-  name: "reply_to_email",
-  description: "Replies to a specific email",
+export const listLabels = tool({
+  name: "list_labels",
+  description: "Lists all labels in the user's Gmail account",
+  parameters: z.object({}),
+  async execute(_, runContext?: RunContext<UserInfo>) {
+    const service = await getGmailService(runContext?.context!);
+
+    const res = await service.users.labels.list({
+      userId: "me",
+    });
+
+    return res.data.labels;
+  },
+});
+
+export const addLabelToEmail = tool({
+  name: "add_label_to_email",
+  description: "Adds a label to an email",
   parameters: z.object({
     messageId: z.string(),
-    body: z.string(),
-    subject: z.string().optional(),
+    labelId: z.string(),
   }),
   async execute(args, runContext?: RunContext<UserInfo>) {
     const service = await getGmailService(runContext?.context!);
 
-    // Get the original message to extract headers
-    const originalMessage = await service.users.messages.get({
+    const res = await service.users.messages.modify({
       userId: "me",
       id: args.messageId,
-    });
-
-    const headers = originalMessage.data.payload?.headers || [];
-    const subject = headers.find((h) => h.name === "Subject")?.value || "";
-    const from = headers.find((h) => h.name === "From")?.value || "";
-    const to = headers.find((h) => h.name === "To")?.value || "";
-    const messageId = headers.find((h) => h.name === "Message-ID")?.value || "";
-    const references =
-      headers.find((h) => h.name === "References")?.value || "";
-
-    const replySubject =
-      args.subject || (subject.startsWith("Re:") ? subject : `Re: ${subject}`);
-
-    const message = createReplyMessage({
-      to: [from],
-      subject: replySubject,
-      body: args.body,
-      inReplyTo: messageId,
-      references: references || messageId,
-    });
-
-    const encodedMessage = Buffer.from(message)
-      .toString("base64")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_");
-
-    const response = await service.users.messages.send({
-      userId: "me",
       requestBody: {
-        raw: encodedMessage,
+        addLabelIds: [args.labelId],
       },
     });
 
-    return {
-      messageId: response.data.id,
-      threadId: response.data.threadId,
-      labelIds: response.data.labelIds,
-      success: true,
-    };
+    return res.data;
+  },
+});
+
+export const markAsRead = tool({
+  name: "mark_as_read",
+  description: "Marks an email as read",
+  parameters: z.object({
+    messageId: z.string(),
+  }),
+  async execute(args, runContext?: RunContext<UserInfo>) {
+    const service = await getGmailService(runContext?.context!);
+    const res = await service.users.messages.modify({
+      userId: "me",
+      id: args.messageId,
+      requestBody: {
+        removeLabelIds: ["UNREAD"],
+      },
+    });
+    return res.data;
+  },
+});
+
+export const archiveEmail = tool({
+  name: "archive_email",
+  description: "Archives an email (removes it from inbox)",
+  parameters: z.object({
+    messageId: z.string(),
+  }),
+  async execute(args, runContext?: RunContext<UserInfo>) {
+    const service = await getGmailService(runContext?.context!);
+    const res = await service.users.messages.modify({
+      userId: "me",
+      id: args.messageId,
+      requestBody: {
+        removeLabelIds: ["INBOX"],
+      },
+    });
+    return res.data;
   },
 });
 
 export const searchEmails = tool({
   name: "search_emails",
-  description: "Searches for emails using Gmail search operators",
+  description: "Searches emails using a query",
   parameters: z.object({
-    query: z.string(),
-    maxResults: z.number().int().positive().default(10),
+    query: z.string().describe("Search string like 'from:boss subject:report'"),
+    maxResults: z.number().min(1).max(20).default(5),
   }),
   async execute(args, runContext?: RunContext<UserInfo>) {
     const service = await getGmailService(runContext?.context!);
 
-    const response = await service.users.messages.list({
+    const res = await service.users.messages.list({
       userId: "me",
-      maxResults: args.maxResults,
       q: args.query,
+      maxResults: args.maxResults,
     });
 
-    const messages = response.data.messages || [];
-    const detailedMessages = await Promise.all(
-      messages.map(async (message) => {
-        const details = await service.users.messages.get({
+    const messages = res.data.messages || [];
+
+    const detailed = await Promise.all(
+      messages.map(async (msg) => {
+        const full = await service.users.messages.get({
           userId: "me",
-          id: message.id!,
+          id: msg.id!,
+          format: "metadata",
+          metadataHeaders: ["Subject", "From"],
         });
-        return formatEmail(details.data);
+        return {
+          id: msg.id,
+          snippet: full.data.snippet,
+          headers: full.data.payload?.headers,
+        };
       })
     );
 
-    return detailedMessages;
+    return detailed;
+  },
+});
+
+export const listEmailsByDate = tool({
+  name: "list_emails_by_date",
+  description: "Lists emails received within a specific date range",
+  parameters: z.object({
+    startDate: z.string().describe("Start date (YYYY-MM-DD)"),
+    endDate: z.string().describe("End date (YYYY-MM-DD)"),
+    maxResults: z.number().min(1).max(50).default(10),
+  }),
+  async execute(args, runContext?: RunContext<UserInfo>) {
+    const service = await getGmailService(runContext?.context!);
+
+    const query = `after:${args.startDate} before:${args.endDate}`;
+    const res = await service.users.messages.list({
+      userId: "me",
+      q: query,
+      maxResults: args.maxResults,
+    });
+
+    return res.data.messages || [];
+  },
+});
+
+export const getEmailById = tool({
+  name: "get_email_by_id",
+  description: "Fetches the full content of an email by its ID",
+  parameters: z.object({
+    messageId: z.string(),
+  }),
+  async execute(args, runContext?: RunContext<UserInfo>) {
+    const service = await getGmailService(runContext?.context!);
+
+    const res = await service.users.messages.get({
+      userId: "me",
+      id: args.messageId,
+      format: "full",
+    });
+
+    return res.data;
+  },
+});
+
+export const getThreadById = tool({
+  name: "get_thread_by_id",
+  description: "Fetches all messages in an email thread",
+  parameters: z.object({
+    threadId: z.string(),
+  }),
+  async execute(args, runContext?: RunContext<UserInfo>) {
+    const service = await getGmailService(runContext?.context!);
+    const thread = await service.users.threads.get({
+      userId: "me",
+      id: args.threadId,
+    });
+
+    return thread.data;
+  },
+});
+
+export const listThreads = tool({
+  name: "list_threads",
+  description: "Lists recent email threads",
+  parameters: z.object({
+    maxResults: z.number().min(1).max(50).default(10),
+  }),
+  async execute(args, runContext?: RunContext<UserInfo>) {
+    const service = await getGmailService(runContext?.context!);
+    const res = await service.users.threads.list({
+      userId: "me",
+      maxResults: args.maxResults,
+    });
+
+    return res.data.threads || [];
+  },
+});
+
+export const markAsUnread = tool({
+  name: "mark_as_unread",
+  description: "Marks an email as unread",
+  parameters: z.object({
+    messageId: z.string(),
+  }),
+  async execute({ messageId }, runContext?: RunContext<UserInfo>) {
+    const service = await getGmailService(runContext?.context!);
+    await service.users.messages.modify({
+      userId: "me",
+      id: messageId,
+      requestBody: {
+        removeLabelIds: ["LABEL_READ"],
+      },
+    });
+    return { success: true };
+  },
+});
+
+export const trashEmail = tool({
+  name: "trash_email",
+  description: "Moves an email to the trash",
+  parameters: z.object({
+    messageId: z.string(),
+  }),
+  async execute({ messageId }, runContext?: RunContext<UserInfo>) {
+    const service = await getGmailService(runContext?.context!);
+    await service.users.messages.trash({
+      userId: "me",
+      id: messageId,
+    });
+    return { success: true };
+  },
+});
+
+export const untrashEmail = tool({
+  name: "untrash_email",
+  description: "Restores a trashed email",
+  parameters: z.object({
+    messageId: z.string(),
+  }),
+  async execute({ messageId }, runContext?: RunContext<UserInfo>) {
+    const service = await getGmailService(runContext?.context!);
+    await service.users.messages.untrash({
+      userId: "me",
+      id: messageId,
+    });
+    return { success: true };
   },
 });
 
 export const getLabels = tool({
   name: "get_labels",
-  description: "Gets all Gmail labels",
+  description: "Fetches all labels in the user's Gmail account",
   parameters: z.object({}),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(_, runContext?: RunContext<UserInfo>) {
     const service = await getGmailService(runContext?.context!);
-
-    const response = await service.users.labels.list({
-      userId: "me",
-    });
-
-    return (
-      response.data.labels?.map((label) => ({
-        id: label.id,
-        name: label.name,
-        type: label.type,
-        messageListVisibility: label.messageListVisibility,
-        labelListVisibility: label.labelListVisibility,
-      })) || []
-    );
+    const res = await service.users.labels.list({ userId: "me" });
+    return res.data.labels || [];
   },
 });
 
@@ -214,243 +387,78 @@ export const createLabel = tool({
   name: "create_label",
   description: "Creates a new Gmail label",
   parameters: z.object({
-    name: z.string(),
-    messageListVisibility: z.enum(["show", "hide"]).optional(),
-    labelListVisibility: z.enum(["labelShow", "labelHide"]).optional(),
+    labelName: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute({ labelName }, runContext?: RunContext<UserInfo>) {
     const service = await getGmailService(runContext?.context!);
-
-    const response = await service.users.labels.create({
+    const res = await service.users.labels.create({
       userId: "me",
       requestBody: {
-        name: args.name,
-        messageListVisibility: args.messageListVisibility,
-        labelListVisibility: args.labelListVisibility,
+        name: labelName,
+        labelListVisibility: "labelShow",
+        messageListVisibility: "show",
+      },
+    });
+    return res.data;
+  },
+});
+
+export const replyToEmail = tool({
+  name: "reply_to_email",
+  description: "Replies to a specific email with a message",
+  parameters: z.object({
+    threadId: z.string(),
+    to: z.string(),
+    subject: z.string(),
+    body: z.string(),
+    messageId: z.string(),
+  }),
+  async execute(
+    { threadId, to, subject, body, messageId },
+    runContext?: RunContext<UserInfo>
+  ) {
+    const service = await getGmailService(runContext?.context!);
+
+    const rawMessage = encode({
+      to,
+      subject,
+      body,
+      inReplyTo: messageId,
+    });
+
+    const res = await service.users.messages.send({
+      userId: "me",
+      requestBody: {
+        threadId,
+        raw: rawMessage,
       },
     });
 
-    return {
-      id: response.data.id,
-      name: response.data.name,
-      type: response.data.type,
-      messageListVisibility: response.data.messageListVisibility,
-      labelListVisibility: response.data.labelListVisibility,
-    };
+    return res.data;
   },
 });
 
 export const modifyEmailLabels = tool({
   name: "modify_email_labels",
-  description: "Adds or removes labels from an email",
+  description: "Modifies labels on an email (add or remove)",
   parameters: z.object({
     messageId: z.string(),
-    addLabelIds: z.array(z.string()).optional(),
-    removeLabelIds: z.array(z.string()).optional(),
+    addLabelIds: z.array(z.string()).nullable(),
+    removeLabelIds: z.array(z.string()).nullable(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(
+    { messageId, addLabelIds, removeLabelIds },
+    runContext?: RunContext<UserInfo>
+  ) {
     const service = await getGmailService(runContext?.context!);
-
-    const response = await service.users.messages.modify({
+    await service.users.messages.modify({
       userId: "me",
-      id: args.messageId,
+      id: messageId,
       requestBody: {
-        addLabelIds: args.addLabelIds,
-        removeLabelIds: args.removeLabelIds,
+        addLabelIds: addLabelIds || [],
+        removeLabelIds: removeLabelIds || [],
       },
     });
-
-    return {
-      messageId: response.data.id,
-      threadId: response.data.threadId,
-      labelIds: response.data.labelIds,
-      success: true,
-    };
+    return { success: true };
   },
 });
-
-export const markAsRead = tool({
-  name: "mark_as_read",
-  description: "Marks an email as read by removing the UNREAD label",
-  parameters: z.object({
-    messageId: z.string(),
-  }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
-    const service = await getGmailService(runContext?.context!);
-
-    const response = await service.users.messages.modify({
-      userId: "me",
-      id: args.messageId,
-      requestBody: {
-        removeLabelIds: ["UNREAD"],
-      },
-    });
-
-    return {
-      messageId: response.data.id,
-      threadId: response.data.threadId,
-      labelIds: response.data.labelIds,
-      success: true,
-    };
-  },
-});
-
-export const markAsUnread = tool({
-  name: "mark_as_unread",
-  description: "Marks an email as unread by adding the UNREAD label",
-  parameters: z.object({
-    messageId: z.string(),
-  }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
-    const service = await getGmailService(runContext?.context!);
-
-    const response = await service.users.messages.modify({
-      userId: "me",
-      id: args.messageId,
-      requestBody: {
-        addLabelIds: ["UNREAD"],
-      },
-    });
-
-    return {
-      messageId: response.data.id,
-      threadId: response.data.threadId,
-      labelIds: response.data.labelIds,
-      success: true,
-    };
-  },
-});
-
-export const trashEmail = tool({
-  name: "trash_email",
-  description: "Moves an email to trash",
-  parameters: z.object({
-    messageId: z.string(),
-  }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
-    const service = await getGmailService(runContext?.context!);
-
-    const response = await service.users.messages.trash({
-      userId: "me",
-      id: args.messageId,
-    });
-
-    return {
-      messageId: response.data.id,
-      threadId: response.data.threadId,
-      labelIds: response.data.labelIds,
-      success: true,
-    };
-  },
-});
-
-export const untrashEmail = tool({
-  name: "untrash_email",
-  description: "Removes an email from trash",
-  parameters: z.object({
-    messageId: z.string(),
-  }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
-    const service = await getGmailService(runContext?.context!);
-
-    const response = await service.users.messages.untrash({
-      userId: "me",
-      id: args.messageId,
-    });
-
-    return {
-      messageId: response.data.id,
-      threadId: response.data.threadId,
-      labelIds: response.data.labelIds,
-      success: true,
-    };
-  },
-});
-
-// Helper functions
-function formatEmail(message: gmail_v1.Schema$Message) {
-  const headers = message.payload?.headers || [];
-  const subject = headers.find((h) => h.name === "Subject")?.value || "";
-  const from = headers.find((h) => h.name === "From")?.value || "";
-  const to = headers.find((h) => h.name === "To")?.value || "";
-  const date = headers.find((h) => h.name === "Date")?.value || "";
-  const cc = headers.find((h) => h.name === "Cc")?.value || "";
-  const bcc = headers.find((h) => h.name === "Bcc")?.value || "";
-
-  let body = "";
-  if (message.payload?.body?.data) {
-    body = Buffer.from(message.payload.body.data, "base64").toString("utf-8");
-  } else if (message.payload?.parts) {
-    const textPart = message.payload.parts.find(
-      (part) => part.mimeType === "text/plain" && part.body?.data
-    );
-    if (textPart?.body?.data) {
-      body = Buffer.from(textPart.body.data, "base64").toString("utf-8");
-    }
-  }
-
-  return {
-    id: message.id,
-    threadId: message.threadId,
-    subject,
-    from,
-    to,
-    cc,
-    bcc,
-    date,
-    body,
-    labelIds: message.labelIds,
-    snippet: message.snippet,
-  };
-}
-
-function createEmailMessage(args: {
-  to: string[];
-  subject: string;
-  body: string;
-  cc?: string[];
-  bcc?: string[];
-  replyTo?: string;
-}) {
-  const to = args.to.join(", ");
-  const cc = args.cc?.join(", ") || "";
-  const bcc = args.bcc?.join(", ") || "";
-  const replyTo = args.replyTo || "";
-
-  const message = [
-    `To: ${to}`,
-    `Subject: ${args.subject}`,
-    ...(cc && [`Cc: ${cc}`]),
-    ...(bcc && [`Bcc: ${bcc}`]),
-    ...(replyTo && [`Reply-To: ${replyTo}`]),
-    "MIME-Version: 1.0",
-    "Content-Type: text/plain; charset=utf-8",
-    "Content-Transfer-Encoding: 7bit",
-    "",
-    args.body,
-  ].join("\r\n");
-
-  return message;
-}
-
-function createReplyMessage(args: {
-  to: string[];
-  subject: string;
-  body: string;
-  inReplyTo: string;
-  references: string;
-}) {
-  const message = [
-    `To: ${args.to.join(", ")}`,
-    `Subject: ${args.subject}`,
-    `In-Reply-To: ${args.inReplyTo}`,
-    `References: ${args.references}`,
-    "MIME-Version: 1.0",
-    "Content-Type: text/plain; charset=utf-8",
-    "Content-Transfer-Encoding: 7bit",
-    "",
-    args.body,
-  ].join("\r\n");
-
-  return message;
-}

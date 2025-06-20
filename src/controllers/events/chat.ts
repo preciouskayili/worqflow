@@ -6,6 +6,7 @@ import { run } from "@openai/agents";
 import { ChatMessageModel, ThreadModel } from "../../models/Chat";
 import { z } from "zod";
 import { getRelevantMessages, saveChatHistory } from "../../lib/vectorestore";
+import { setupSSE, heartbeatStream } from "../../lib/misc";
 
 const paramsSchema = z.object({
   threadId: z.string(),
@@ -13,10 +14,7 @@ const paramsSchema = z.object({
 });
 
 export async function messageEvents(req: AuthRequest, res: Response) {
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-
+  setupSSE(res);
   res.write(
     'event: connected\ndata: {"message": "Connection established"}\n\n'
   );
@@ -70,16 +68,34 @@ export async function messageEvents(req: AuthRequest, res: Response) {
     return;
   }
 
-  const context = await getRelevantMessages(
+  const contextMessages = await getRelevantMessages(
     userMsg.content,
     req.user._id.toString(),
     threadId,
     10
   );
 
-  const historyText = context.length
-    ? `<history>${context.map((m) => m.content).join("\n\n")}</history>`
+  const historyText = contextMessages.length
+    ? `<history>${contextMessages.map((m) => m.content).join("\n\n")}</history>`
     : "";
+
+  const runContext = {
+    userId: req.user._id,
+    context: {
+      userId: req.user._id,
+      userEmail: req.user.email,
+      userName: req.user.name,
+      access_token: integration.access_token!,
+      refresh_token: integration.refresh_token!,
+    },
+  };
+
+  const timeout = setTimeout(() => {
+    res.write(`event: error\ndata: {"message": "Agent timeout"}\n\n`);
+    res.end();
+  }, 60000);
+
+  const heartbeat = heartbeatStream(res);
 
   try {
     const result = await run(
@@ -87,14 +103,7 @@ export async function messageEvents(req: AuthRequest, res: Response) {
       `User: \n${req.user.name ?? "[Not Provided]"}\n${
         req.user.email
       }\n\nMessage: ${userMsg.content}\n\n${historyText}`,
-      {
-        context: {
-          userId: req.user._id,
-          access_token: integration.access_token!,
-          refresh_token: integration.refresh_token!,
-        },
-        stream: true,
-      }
+      { context: runContext, stream: true }
     );
 
     for await (const event of result) {
@@ -115,16 +124,22 @@ export async function messageEvents(req: AuthRequest, res: Response) {
       }
     }
 
-    await saveChatHistory(
-      result.finalOutput!,
-      req.user._id.toString(),
-      threadId,
-      "agent"
-    );
+    if (result.finalOutput) {
+      await saveChatHistory(
+        result.finalOutput,
+        req.user._id.toString(),
+        threadId,
+        "agent"
+      );
+    }
 
+    clearTimeout(timeout);
+    clearInterval(heartbeat);
     res.end();
   } catch (err: any) {
     console.error(err);
+    clearTimeout(timeout);
+    clearInterval(heartbeat);
     res.write(
       `event: error\ndata: ${JSON.stringify({
         message: "Agent error",
@@ -135,6 +150,8 @@ export async function messageEvents(req: AuthRequest, res: Response) {
   }
 
   req.on("close", () => {
+    clearTimeout(timeout);
+    clearInterval(heartbeat);
     console.log("Client disconnected from SSE");
   });
 }
