@@ -81,13 +81,10 @@ export async function messageEvents(req: AuthRequest, res: Response) {
 
   const runContext = {
     userId: req.user._id,
-    context: {
-      userId: req.user._id,
-      userEmail: req.user.email,
-      userName: req.user.name,
-      access_token: integration.access_token!,
-      refresh_token: integration.refresh_token!,
-    },
+    userEmail: req.user.email,
+    userName: req.user.name,
+    access_token: integration.access_token!,
+    refresh_token: integration.refresh_token!,
   };
 
   const timeout = setTimeout(() => {

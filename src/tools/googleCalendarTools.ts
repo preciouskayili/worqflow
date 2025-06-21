@@ -4,11 +4,13 @@ import { getCalendarService } from "../lib/googleapis";
 import { getDayBoundsInUTC, formatEvent } from "../lib/misc";
 import { calendar_v3 } from "googleapis";
 import { RunContext } from "@openai/agents";
+import { Types } from "mongoose";
 
 type UserInfo = {
   access_token: string;
   refresh_token: string;
   expires_at?: string;
+  userId: string | Types.ObjectId;
 };
 
 export const createCalendarList = tool({
@@ -19,6 +21,9 @@ export const createCalendarList = tool({
     attendees: z.array(z.string()).nullable().default(null),
   }),
   async execute(args, runContext?: RunContext<UserInfo>) {
+    console.log("================");
+    console.log("Create calendar list: ", runContext?.context);
+    console.log("================");
     const service = await getCalendarService(runContext?.context!);
     const res = await service.calendars.insert({
       requestBody: { summary: args.calendarName },
@@ -36,6 +41,9 @@ export const listCalendarList = tool({
     userId: z.string(),
   }),
   async execute(args, runContext?: RunContext<UserInfo>) {
+    console.log("================");
+    console.log("List calendar list: ", runContext?.context);
+    console.log("================");
     const service = await getCalendarService(runContext?.context!);
     const res = await service.calendarList.list({
       maxResults: Math.min(200, args.maxCapacity),
@@ -59,6 +67,9 @@ export const listCalendarEvents = tool({
     userId: z.string(),
   }),
   async execute(args, runContext?: RunContext<UserInfo>) {
+    console.log("================");
+    console.log("List calendar events: ", runContext?.context);
+    console.log("================");
     const service = await getCalendarService(runContext?.context!);
     const res = await service.events.list({
       calendarId: args.calendarId,
@@ -81,6 +92,9 @@ export const listEventsForDate = tool({
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Expected format: YYYY-MM-DD"),
   }),
   async execute(args, runContext?: RunContext<UserInfo>) {
+    console.log("================");
+    console.log("List events for date: ", runContext?.context);
+    console.log("================");
     const service = await getCalendarService(runContext?.context!);
     const date = new Date(args.date);
     const { timeMin, timeMax } = getDayBoundsInUTC(date, "Africa/Lagos");
@@ -111,6 +125,9 @@ export const listEventsInRange = tool({
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Expected format: YYYY-MM-DD"),
   }),
   async execute(args, runContext?: RunContext<UserInfo>) {
+    console.log("================");
+    console.log("List events in range: ", runContext?.context);
+    console.log("================");
     const service = await getCalendarService(runContext?.context!);
     const { timeMin } = getDayBoundsInUTC(
       new Date(args.startDate),
@@ -143,6 +160,9 @@ export const listCurrentCalendarEvents = tool({
     userId: z.string(),
   }),
   async execute(args, runContext?: RunContext<UserInfo>) {
+    console.log("================");
+    console.log("List current calendar events: ", args);
+    console.log("================");
     const service = await getCalendarService(runContext?.context!);
     const { timeMin } = getDayBoundsInUTC(new Date(), "Africa/Lagos");
 
@@ -174,6 +194,9 @@ export const listTodaysEvents = tool({
     userId: z.string(),
   }),
   async execute(args, runContext?: RunContext<UserInfo>) {
+    console.log("================");
+    console.log("List todays events: ", runContext?.context);
+    console.log("================");
     const service = await getCalendarService(runContext?.context!);
     const { timeMin, timeMax } = getDayBoundsInUTC(new Date(), "Africa/Lagos");
 
@@ -204,6 +227,9 @@ export const insertCalendarEvent = tool({
     userId: z.string(),
   }),
   async execute(args, runContext?: RunContext<UserInfo>) {
+    console.log("================");
+    console.log("Insert calendar event: ", runContext?.context);
+    console.log("================");
     const service = await getCalendarService(runContext?.context!);
 
     const eventBody: calendar_v3.Schema$Event = {
@@ -241,6 +267,9 @@ export const deleteCalendarEvent = tool({
     userId: z.string(),
   }),
   async execute(args, runContext?: RunContext<UserInfo>) {
+    console.log("================");
+    console.log("Delete calendar event: ", runContext?.context);
+    console.log("================");
     const service = await getCalendarService(runContext?.context!);
 
     const res = await service.events.delete({
@@ -260,6 +289,9 @@ export const updateCalendarEvent = tool({
     userId: z.string(),
   }),
   async execute(args, runContext?: RunContext<UserInfo>) {
+    console.log("================");
+    console.log("Update calendar event: ", runContext?.context);
+    console.log("================");
     const service = await getCalendarService(runContext?.context!);
     const res = await service.events.update({
       calendarId: args.calendarId,

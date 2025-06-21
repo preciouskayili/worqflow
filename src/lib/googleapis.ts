@@ -44,7 +44,8 @@ export async function refreshAndSaveTokens(
   });
 }
 
-export async function getCalendarService(integration: {
+// Centralized function to get authenticated Google OAuth2Client
+export async function getGoogleService(integration: {
   access_token: string;
   refresh_token: string;
   expires_at?: string;
@@ -69,6 +70,21 @@ export async function getCalendarService(integration: {
 
   await client.getAccessToken();
 
+  return client;
+}
+
+export async function getCalendarService(integration: {
+  access_token: string;
+  refresh_token: string;
+  expires_at?: string;
+}) {
+  console.log("================");
+  console.log("Calendar service: ", integration);
+  console.log("================");
+  const client = await getGoogleService(integration);
+  console.log("================");
+  console.log("Calendar service: ", client);
+  console.log("================");
   return google.calendar({ version: "v3", auth: client });
 }
 
@@ -77,27 +93,35 @@ export async function getGmailService(integration: {
   refresh_token: string;
   expires_at?: string;
 }) {
-  if (!integration) throw new Error("No Google integration found");
-
-  const client = new OAuth2Client(
-    env.GOOGLE_CLIENT_ID,
-    env.GOOGLE_CLIENT_SECRET,
-    env.GOOGLE_REDIRECT_URI
-  );
-
-  client.setCredentials({
-    access_token: integration.access_token!,
-    refresh_token: integration.refresh_token!,
-    expiry_date: integration.expires_at
-      ? new Date(integration.expires_at).getTime()
-      : 0,
-  });
-
-  await refreshAndSaveTokens(client, integration);
-
-  await client.getAccessToken();
-
+  const client = await getGoogleService(integration);
   return google.gmail({ version: "v1", auth: client });
+}
+
+export async function getDriveService(integration: {
+  access_token: string;
+  refresh_token: string;
+  expires_at?: string;
+}) {
+  const client = await getGoogleService(integration);
+  return google.drive({ version: "v3", auth: client });
+}
+
+export async function getDocsService(integration: {
+  access_token: string;
+  refresh_token: string;
+  expires_at?: string;
+}) {
+  const client = await getGoogleService(integration);
+  return google.docs({ version: "v1", auth: client });
+}
+
+export async function getSheetsService(integration: {
+  access_token: string;
+  refresh_token: string;
+  expires_at?: string;
+}) {
+  const client = await getGoogleService(integration);
+  return google.sheets({ version: "v4", auth: client });
 }
 
 export async function getGoogleOAuthUrl(scopes: string[], state?: string) {

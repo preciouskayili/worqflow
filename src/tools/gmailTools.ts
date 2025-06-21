@@ -32,6 +32,10 @@ export const sendEmail = tool({
       requestBody: { raw },
     });
 
+    console.log("================");
+    console.log("Send email: ", res.data);
+    console.log("================");
+
     return res.data;
   },
 });
@@ -43,7 +47,6 @@ export const listEmails = tool({
     query: z
       .string()
       .default("")
-      .nullable()
       .describe("Search query (e.g., 'from:someone@example.com')"),
     maxResults: z.number().min(1).max(20).default(5),
   }),
@@ -73,8 +76,10 @@ export const listEmails = tool({
         };
       })
     );
-
-    console.log(detailedMessages);
+    console.log("================");
+    console.log("Query: ", args.query);
+    console.log("List emails: ", res.data, detailedMessages);
+    console.log("================");
 
     return detailedMessages;
   },
@@ -94,7 +99,9 @@ export const readEmail = tool({
       id: args.messageId,
       format: "full",
     });
-
+    console.log("================");
+    console.log("Read email: ", res.data);
+    console.log("================");
     return {
       id: res.data.id,
       snippet: res.data.snippet,
@@ -128,6 +135,10 @@ export const createDraft = tool({
         },
       },
     });
+
+    console.log("================");
+    console.log("Create draft: ", res.data);
+    console.log("================");
 
     return res.data;
   },
@@ -166,6 +177,10 @@ export const addLabelToEmail = tool({
       },
     });
 
+    console.log("================");
+    console.log("Modify email: ", res.data);
+    console.log("================");
+
     return res.data;
   },
 });
@@ -185,6 +200,9 @@ export const markAsRead = tool({
         removeLabelIds: ["UNREAD"],
       },
     });
+    console.log("================");
+    console.log("Mark as read: ", res.data);
+    console.log("================");
     return res.data;
   },
 });
@@ -204,6 +222,9 @@ export const archiveEmail = tool({
         removeLabelIds: ["INBOX"],
       },
     });
+    console.log("================");
+    console.log("Archive email: ", res.data);
+    console.log("================");
     return res.data;
   },
 });
@@ -242,6 +263,10 @@ export const searchEmails = tool({
       })
     );
 
+    console.log("================");
+    console.log("Search emails: ", detailed);
+    console.log("================");
+
     return detailed;
   },
 });
@@ -264,6 +289,10 @@ export const listEmailsByDate = tool({
       maxResults: args.maxResults,
     });
 
+    console.log("================");
+    console.log("List emails by date: ", res.data);
+    console.log("================");
+
     return res.data.messages || [];
   },
 });
@@ -283,6 +312,10 @@ export const getEmailById = tool({
       format: "full",
     });
 
+    console.log("================");
+    console.log("Get email by id: ", res.data);
+    console.log("================");
+
     return res.data;
   },
 });
@@ -300,6 +333,10 @@ export const getThreadById = tool({
       id: args.threadId,
     });
 
+    console.log("================");
+    console.log("Get thread by id: ", thread.data);
+    console.log("================");
+
     return thread.data;
   },
 });
@@ -316,6 +353,10 @@ export const listThreads = tool({
       userId: "me",
       maxResults: args.maxResults,
     });
+
+    console.log("================");
+    console.log("List threads: ", res.data);
+    console.log("================");
 
     return res.data.threads || [];
   },
@@ -336,6 +377,9 @@ export const markAsUnread = tool({
         removeLabelIds: ["LABEL_READ"],
       },
     });
+    console.log("================");
+    console.log("Mark as unread: ", { success: true });
+    console.log("================");
     return { success: true };
   },
 });
@@ -352,6 +396,9 @@ export const trashEmail = tool({
       userId: "me",
       id: messageId,
     });
+    console.log("================");
+    console.log("Trash email: ", { success: true });
+    console.log("================");
     return { success: true };
   },
 });
@@ -368,6 +415,9 @@ export const untrashEmail = tool({
       userId: "me",
       id: messageId,
     });
+    console.log("================");
+    console.log("Untrash email: ", { success: true });
+    console.log("================");
     return { success: true };
   },
 });
@@ -399,6 +449,9 @@ export const createLabel = tool({
         messageListVisibility: "show",
       },
     });
+    console.log("================");
+    console.log("Create label: ", res.data);
+    console.log("================");
     return res.data;
   },
 });
@@ -434,6 +487,10 @@ export const replyToEmail = tool({
       },
     });
 
+    console.log("================");
+    console.log("Reply to email: ", res.data);
+    console.log("================");
+
     return res.data;
   },
 });
@@ -459,6 +516,9 @@ export const modifyEmailLabels = tool({
         removeLabelIds: removeLabelIds || [],
       },
     });
+    console.log("================");
+    console.log("Modify email labels: ", { success: true });
+    console.log("================");
     return { success: true };
   },
 });
