@@ -1,5 +1,5 @@
 import { Agent } from "@openai/agents";
-import * as gmailTools from "../tools/gmailTools";
+import * as gmailTools from "../tools/google/gmail";
 import { GMAIL_AGENT_PROMPT } from "../lib/prompts";
 
 const {

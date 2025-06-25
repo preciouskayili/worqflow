@@ -78,13 +78,7 @@ export async function getCalendarService(integration: {
   refresh_token: string;
   expires_at?: string;
 }) {
-  console.log("================");
-  console.log("Calendar service: ", integration);
-  console.log("================");
   const client = await getGoogleService(integration);
-  console.log("================");
-  console.log("Calendar service: ", client);
-  console.log("================");
   return google.calendar({ version: "v3", auth: client });
 }
 

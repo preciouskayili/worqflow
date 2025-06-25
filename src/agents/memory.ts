@@ -1,6 +1,6 @@
 import { Agent } from "@openai/agents";
 import { MEMORY_AGENT_PROMPT } from "../lib/prompts";
-import { createMemory } from "../tools/memoryTools";
+import { createMemory } from "../tools/memory";
 
 export const memoryAgent = new Agent({
   name: "memory_agent",

@@ -91,3 +91,18 @@ export function encode({
 
   return encodedMessage;
 }
+
+export async function makeGithubRequest(
+  url: string,
+  method: string,
+  body?: any
+) {
+  const res = await fetch(url, {
+    method,
+    headers: {
+      Authorization: `Bearer ${process.env.GITHUB_ACCESS_TOKEN}`,
+    },
+    body: JSON.stringify(body),
+  });
+  return await res.json();
+}
