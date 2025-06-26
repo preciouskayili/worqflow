@@ -2,6 +2,7 @@ import { calendar_v3 } from "googleapis";
 import { IntegrationModel } from "../models/Integrations";
 import { Response } from "express";
 import { LinearClient } from "@linear/sdk";
+import { Client as NotionClient } from "@notionhq/client";
 
 export async function makeSlackRequest(
   userId: string,
@@ -22,6 +23,14 @@ export async function makeSlackRequest(
     body: JSON.stringify(body),
   });
   return await res.json();
+}
+
+export async function getNotionClient(userId: string) {
+  const integration = await getIntegration(userId, "notion");
+  if (!integration) {
+    throw new Error("Notion integration not found");
+  }
+  return new NotionClient({ auth: integration.access_token! });
 }
 
 export async function getLinearClient(userId: string) {
