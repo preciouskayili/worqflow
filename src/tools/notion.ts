@@ -116,3 +116,49 @@ export const updateNotionPage = tool({
     return res;
   },
 });
+
+export const getNotionPageById = tool({
+  name: "get_notion_page_by_id",
+  description: "Retrieve a Notion page by its ID",
+  parameters: z.object({
+    pageId: z.string(),
+  }),
+  async execute(args, runContext?: RunContext<UserInfo>) {
+    const notion = await getNotionClient(
+      runContext?.context.userId.toString()!
+    );
+    const res = await notion.pages.retrieve({ page_id: args.pageId });
+    return res;
+  },
+});
+
+export const getNotionPageByTitle = tool({
+  name: "get_notion_page_by_title",
+  description: "Retrieve a Notion page by its title",
+  parameters: z.object({
+    title: z.string(),
+  }),
+  async execute(args, runContext?: RunContext<UserInfo>) {
+    const notion = await getNotionClient(
+      runContext?.context.userId.toString()!
+    );
+    const res = await notion.search({
+      query: args.title,
+      filter: {
+        property: "object",
+        value: "page",
+      },
+    });
+
+    const page = res.results.find(
+      (result: any) =>
+        result.properties.title.title[0]?.text.content === args.title
+    );
+
+    if (!page) {
+      return `No page found with title "${args.title}".`;
+    }
+
+    return page;
+  },
+});
