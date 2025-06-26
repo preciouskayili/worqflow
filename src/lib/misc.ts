@@ -1,6 +1,42 @@
 import { calendar_v3 } from "googleapis";
 import { IntegrationModel } from "../models/Integrations";
 import { Response } from "express";
+import { LinearClient } from "@linear/sdk";
+
+export async function makeSlackRequest(
+  userId: string,
+  endpoint: string,
+  method: string,
+  body?: any
+) {
+  const integration = await getIntegration(userId, "slack");
+  if (!integration) {
+    throw new Error("Slack integration not found");
+  }
+
+  const res = await fetch(`https://slack.com/api/${endpoint}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${integration.access_token}`,
+    },
+    body: JSON.stringify(body),
+  });
+  return await res.json();
+}
+
+export async function getLinearClient(userId: string) {
+  if (!userId) {
+    throw new Error("User ID is required");
+  }
+
+  const integration = await getIntegration(userId, "linear");
+
+  if (!integration) {
+    throw new Error("Linear integration not found");
+  }
+
+  return new LinearClient({ apiKey: integration.access_token! });
+}
 
 export function getDayBoundsInUTC(date: Date, timeZone: string) {
   const localeDate = new Intl.DateTimeFormat("en-US", {
@@ -27,8 +63,8 @@ export function getDayBoundsInUTC(date: Date, timeZone: string) {
   return { timeMin: utcStart.toISOString(), timeMax: utcEnd.toISOString() };
 }
 
-export async function getIntegration(userId: string) {
-  return IntegrationModel.findOne({ user_id: userId }).lean();
+export async function getIntegration(userId: string, name: string) {
+  return IntegrationModel.findOne({ user_id: userId, name }).lean();
 }
 
 export function formatEvent(event: calendar_v3.Schema$Event) {

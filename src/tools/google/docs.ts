@@ -1,14 +1,7 @@
 import { z } from "zod";
-import { Types } from "mongoose";
 import { tool, RunContext } from "@openai/agents";
 import { getDocsService, getDriveService } from "../../lib/googleapis";
-
-export type UserInfo = {
-  access_token: string;
-  refresh_token: string;
-  expires_at?: string;
-  userId: string | Types.ObjectId;
-};
+import { UserInfo } from "../../../types/user";
 
 // --- DOCUMENT MANAGEMENT ---
 

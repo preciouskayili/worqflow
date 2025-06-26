@@ -12,6 +12,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.6.2",
   "dependencies": {
+    "@linear/sdk": "^44.1.0",
     "@openai/agents": "^0.0.4",
     "@pinecone-database/pinecone": "^6.1.0",
     "@types/bcrypt": "^5.0.2",
