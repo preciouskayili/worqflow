@@ -3,6 +3,7 @@ import { IntegrationModel } from "../models/Integrations";
 import { Response } from "express";
 import { LinearClient } from "@linear/sdk";
 import { Client as NotionClient } from "@notionhq/client";
+import axios from "axios";
 
 export async function makeSlackRequest(
   userId: string,
@@ -74,6 +75,15 @@ export function getDayBoundsInUTC(date: Date, timeZone: string) {
 
 export async function getIntegration(userId: string, name: string) {
   return IntegrationModel.findOne({ user_id: userId, name }).lean();
+}
+
+export async function getFigmaClient(token: string) {
+  return axios.create({
+    baseURL: "https://api.figma.com/v1",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 }
 
 export function formatEvent(event: calendar_v3.Schema$Event) {

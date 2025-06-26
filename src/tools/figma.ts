@@ -1,146 +1,180 @@
-import axios from "axios";
+import { z } from "zod";
+import { Types } from "mongoose";
+import { tool, RunContext } from "@openai/agents";
+import { getFigmaClient } from "../lib/misc";
 
-type ToolContext = {
-  userId: string;
-  input: string;
+export type UserInfo = {
+  access_token: string;
+  refresh_token: string;
+  expires_at?: string;
+  userId: string | Types.ObjectId;
 };
 
-// Replace with your own user-token fetching logic
-async function getUserFigmaToken(userId: string): Promise<string> {
-  // e.g., from DB
-  return "user-figma-token";
-}
-
-export const listRecentFigmaFiles = {
-  name: "list_recent_figma_files",
-  description: "Lists the user's most recently accessed Figma files.",
-  async execute({ userId }: ToolContext) {
-    const token = await getUserFigmaToken(userId);
-
-    const res = await axios.get("https://api.figma.com/v1/me/files", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const files = res.data?.files || [];
-    if (files.length === 0) return "No recent Figma files found.";
-
-    return files
-      .slice(0, 5)
-      .map((f: any) => `• ${f.name} — ${f.last_modified}`)
-      .join("\n");
+// List team projects
+export const listFigmaProjects = tool({
+  name: "list_figma_projects",
+  description: "List Figma projects for a team",
+  parameters: z.object({ teamId: z.string() }),
+  async execute({ teamId }, runContext?: RunContext<UserInfo>) {
+    const token = runContext?.context?.access_token!;
+    const figma = await getFigmaClient(token);
+    const res = await figma.get(`/teams/${teamId}/projects`);
+    return res.data;
   },
-};
+});
 
-export const findFigmaFileByName = {
-  name: "find_figma_file_by_name",
-  description: "Searches for a Figma file by name using keyword(s).",
-  async execute({ userId, input }: ToolContext) {
-    const token = await getUserFigmaToken(userId);
-
-    const res = await axios.get("https://api.figma.com/v1/me/files", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const files = res.data?.files || [];
-    const match = files.find((f: any) =>
-      f.name.toLowerCase().includes(input.toLowerCase())
-    );
-
-    if (!match) return `No file found matching "${input}".`;
-
-    return `Found: ${match.name} — ${match.last_modified}\nLink: ${match.thumbnail_url}`;
+// List files in a project
+export const listFigmaFiles = tool({
+  name: "list_figma_files",
+  description: "List Figma files in a project",
+  parameters: z.object({ projectId: z.string() }),
+  async execute({ projectId }, runContext?: RunContext<UserInfo>) {
+    const token = runContext?.context?.access_token!;
+    const figma = await getFigmaClient(token);
+    const res = await figma.get(`/projects/${projectId}/files`);
+    return res.data;
   },
-};
+});
 
-export const listCommentsInFigmaFile = {
-  name: "list_figma_comments",
-  description:
-    "Lists all comments in a Figma file given its file key or name keyword.",
-  async execute({ userId, input }: ToolContext) {
-    const token = await getUserFigmaToken(userId);
-
-    const res = await axios.get("https://api.figma.com/v1/me/files", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const files = res.data?.files || [];
-    const file = files.find((f: any) =>
-      f.name.toLowerCase().includes(input.toLowerCase())
-    );
-
-    if (!file) return `No file found matching "${input}".`;
-
-    const commentsRes = await axios.get(
-      `https://api.figma.com/v1/files/${file.key}/comments`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    const comments = commentsRes.data?.comments || [];
-    if (comments.length === 0) return `No comments found in "${file.name}".`;
-
-    return comments
-      .map(
-        (c: any) =>
-          `• ${c.user.handle}: ${c.message} (at ${new Date(
-            c.created_at
-          ).toLocaleString()})`
-      )
-      .join("\n");
+// Get file details (including pages and nodes overview)
+export const getFigmaFile = tool({
+  name: "get_figma_file",
+  description: "Get details of a Figma file",
+  parameters: z.object({ fileId: z.string() }),
+  async execute({ fileId }, runContext?: RunContext<UserInfo>) {
+    const token = runContext?.context?.access_token!;
+    const figma = await getFigmaClient(token);
+    const res = await figma.get(`/files/${fileId}`);
+    return res.data;
   },
-};
+});
 
-export const summarizeFigmaFile = {
-  name: "summarize_figma_file",
-  description:
-    "Summarizes the frames and components inside a Figma file using its name.",
-  async execute({ userId, input }: ToolContext) {
-    const token = await getUserFigmaToken(userId);
-
-    const res = await axios.get("https://api.figma.com/v1/me/files", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const files = res.data?.files || [];
-    const file = files.find((f: any) =>
-      f.name.toLowerCase().includes(input.toLowerCase())
-    );
-
-    if (!file) return `No file found matching "${input}".`;
-
-    const fileData = await axios.get(
-      `https://api.figma.com/v1/files/${file.key}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    const pages = fileData.data?.document?.children || [];
-
-    let output: string[] = [];
-
-    for (const page of pages) {
-      output.push(`Page: ${page.name}`);
-      for (const node of page.children || []) {
-        if (node.type === "FRAME" || node.type === "COMPONENT") {
-          output.push(`  - ${node.type}: ${node.name}`);
-        }
-      }
-    }
-
-    return output.join("\n");
+// Get specific nodes from a file
+export const getFigmaFileNodes = tool({
+  name: "get_figma_file_nodes",
+  description: "Get specific nodes from a Figma file",
+  parameters: z.object({ fileId: z.string(), nodeIds: z.array(z.string()) }),
+  async execute({ fileId, nodeIds }, runContext?: RunContext<UserInfo>) {
+    const token = runContext?.context?.access_token!;
+    const figma = await getFigmaClient(token);
+    const params = nodeIds.map((id) => `ids=${id}`).join("&");
+    const res = await figma.get(`/files/${fileId}/nodes?${params}`);
+    return res.data;
   },
+});
+
+// List components in a file
+export const getFigmaFileComponents = tool({
+  name: "get_figma_file_components",
+  description: "List components defined in a Figma file",
+  parameters: z.object({ fileId: z.string() }),
+  async execute({ fileId }, runContext?: RunContext<UserInfo>) {
+    const token = runContext?.context?.access_token!;
+    const figma = await getFigmaClient(token);
+    const res = await figma.get(`/files/${fileId}/components`);
+    return res.data;
+  },
+});
+
+// Export images for nodes (returns URLs)
+export const exportFigmaImages = tool({
+  name: "export_figma_images",
+  description: "Get image URLs for specific nodes in a file",
+  parameters: z.object({
+    fileId: z.string(),
+    nodeIds: z.array(z.string()),
+    scale: z.number().optional(),
+  }),
+  async execute({ fileId, nodeIds, scale }, runContext?: RunContext<UserInfo>) {
+    const token = runContext?.context?.access_token!;
+    const figma = await getFigmaClient(token);
+    const params = new URLSearchParams();
+    params.set("ids", nodeIds.join(","));
+    if (scale) params.set("scale", scale.toString());
+    const res = await figma.get(`/images/${fileId}?${params.toString()}`);
+    return res.data;
+  },
+});
+
+// Comments on a file
+export const getFigmaFileComments = tool({
+  name: "get_figma_file_comments",
+  description: "List comments on a Figma file",
+  parameters: z.object({ fileId: z.string() }),
+  async execute({ fileId }, runContext?: RunContext<UserInfo>) {
+    const token = runContext?.context?.access_token!;
+    const figma = await getFigmaClient(token);
+    const res = await figma.get(`/files/${fileId}/comments`);
+    return res.data;
+  },
+});
+
+export const postFigmaComment = tool({
+  name: "post_figma_comment",
+  description: "Add a comment to a Figma file",
+  parameters: z.object({
+    fileId: z.string(),
+    message: z.string(),
+    clientX: z.number(),
+    clientY: z.number(),
+  }),
+  async execute(
+    { fileId, message, clientX, clientY },
+    runContext?: RunContext<UserInfo>
+  ) {
+    const token = runContext?.context?.access_token!;
+    const figma = await getFigmaClient(token);
+    const res = await figma.post(`/files/${fileId}/comments`, {
+      message,
+      client_meta: { x: clientX, y: clientY },
+    });
+    return res.data;
+  },
+});
+
+// Notifications
+export const listFigmaNotifications = tool({
+  name: "list_figma_notifications",
+  description: "List Figma notifications for the user",
+  parameters: z.object({}),
+  async execute(_, runContext?: RunContext<UserInfo>) {
+    const token = runContext?.context?.access_token!;
+    const figma = await getFigmaClient(token);
+    const res = await figma.get(`/user/notifications`);
+    return res.data;
+  },
+});
+
+// Team members
+export const listFigmaTeamMembers = tool({
+  name: "list_figma_team_members",
+  description: "List members of a Figma team",
+  parameters: z.object({ teamId: z.string() }),
+  async execute({ teamId }, runContext?: RunContext<UserInfo>) {
+    const token = runContext?.context?.access_token!;
+    const figma = await getFigmaClient(token);
+    const res = await figma.get(`/teams/${teamId}/members`);
+    return res.data;
+  },
+});
+
+// Invite team member
+export const inviteFigmaTeamMember = tool({
+  name: "invite_figma_team_member",
+  description: "Invite a new member to a Figma team",
+  parameters: z.object({
+    teamId: z.string(),
+    email: z.string(),
+    role: z.enum(["viewer", "editor", "owner"]),
+  }),
+  async execute({ teamId, email, role }, runContext?: RunContext<UserInfo>) {
+    const token = runContext?.context?.access_token!;
+    const figma = await getFigmaClient(token);
+    const res = await figma.post(`/teams/${teamId}/members`, { email, role });
+    return res.data;
+  },
+});
+
+export const githubTools = {
+  // Placeholder export if needed
 };
