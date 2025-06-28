@@ -11,10 +11,6 @@ const auth = new OAuth2Client(
   env.GOOGLE_REDIRECT_URI
 );
 
-export async function getIntegration(userId: string) {
-  return IntegrationModel.findOne({ name: "google", user_id: userId }).lean();
-}
-
 export async function refreshAndSaveTokens(
   client: OAuth2Client,
   integration: any

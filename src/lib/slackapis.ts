@@ -8,7 +8,7 @@ const SLACK_REDIRECT_URI = env.SLACK_REDIRECT_URI;
 export async function getSlackOAuthUrl(scopes: string[]) {
   const params = new URLSearchParams({
     client_id: SLACK_CLIENT_ID,
-    scope: scopes.join(" "),
+    user_scope: scopes.join(" "),
     redirect_uri: SLACK_REDIRECT_URI,
   });
   return `https://slack.com/oauth/v2/authorize?${params.toString()}`;

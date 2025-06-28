@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
 import { AuthRequest } from "../../middleware/auth";
-import { getIntegration } from "../../lib/googleapis";
 import { mainAgent } from "../../agents/main";
 import { run } from "@openai/agents";
 import { ChatMessageModel, ThreadModel } from "../../models/Chat";
 import { z } from "zod";
 import { getRelevantMessages, saveChatHistory } from "../../lib/vectorestore";
 import { setupSSE, heartbeatStream } from "../../lib/misc";
+import { IntegrationModel } from "../../models/Integrations";
 
 const paramsSchema = z.object({
   threadId: z.string(),
@@ -57,8 +57,10 @@ export async function messageEvents(req: AuthRequest, res: Response) {
     return;
   }
 
-  const integration = await getIntegration(req.user._id);
-  if (!integration) {
+  const integrations = await IntegrationModel.find({
+    user_id: req.user._id,
+  }).lean();
+  if (!integrations) {
     res.write(
       `event: error\ndata: ${JSON.stringify({
         message: "Integration not found",
@@ -83,8 +85,7 @@ export async function messageEvents(req: AuthRequest, res: Response) {
     userId: req.user._id,
     userEmail: req.user.email,
     userName: req.user.name,
-    access_token: integration.access_token!,
-    refresh_token: integration.refresh_token!,
+    integrations,
   };
 
   const timeout = setTimeout(() => {

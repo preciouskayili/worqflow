@@ -8,6 +8,7 @@ export const IntegrationSchema = new Schema({
   expires_at: { type: Date },
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now },
+  scope: { type: Schema.Types.Mixed },
 });
 
 export const IntegrationModel = model("Integration", IntegrationSchema);

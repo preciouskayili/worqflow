@@ -1,11 +1,10 @@
 export const SLACK_SCOPES = [
   "channels:history",
-  "channels:join",
-  "channels:manage",
   "channels:read",
+  "channels:write",
+  "channels:write.invites",
+  "channels:write.topic",
   "chat:write",
-  "chat:write.customize",
-  "chat:write.public",
   "files:read",
   "files:write",
   "groups:history",
@@ -29,6 +28,5 @@ export const SLACK_SCOPES = [
   "usergroups:read",
   "usergroups:write",
   "users:read",
-  "users:write",
   "users.profile:read",
 ];

@@ -9,8 +9,8 @@ const UserSchema = new Schema(
     magicLinkToken: { type: String },
     magicLinkExpires: { type: Date },
     timeZone: { type: String },
-    workDayStart: { type: Date, default: "09:00" },
-    workDayEnd: { type: Date, default: "17:00" },
+    workDayStart: { type: Date },
+    workDayEnd: { type: Date },
   },
   { timestamps: true }
 );

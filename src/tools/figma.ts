@@ -109,29 +109,6 @@ export const getFigmaFileComments = tool({
   },
 });
 
-export const postFigmaComment = tool({
-  name: "post_figma_comment",
-  description: "Add a comment to a Figma file",
-  parameters: z.object({
-    fileId: z.string(),
-    message: z.string(),
-    clientX: z.number(),
-    clientY: z.number(),
-  }),
-  async execute(
-    { fileId, message, clientX, clientY },
-    runContext?: RunContext<UserInfo>
-  ) {
-    const token = runContext?.context?.access_token!;
-    const figma = await getFigmaClient(token);
-    const res = await figma.post(`/files/${fileId}/comments`, {
-      message,
-      client_meta: { x: clientX, y: clientY },
-    });
-    return res.data;
-  },
-});
-
 // Notifications
 export const listFigmaNotifications = tool({
   name: "list_figma_notifications",
@@ -174,7 +151,3 @@ export const inviteFigmaTeamMember = tool({
     return res.data;
   },
 });
-
-export const githubTools = {
-  // Placeholder export if needed
-};

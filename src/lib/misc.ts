@@ -6,20 +6,15 @@ import { Client as NotionClient } from "@notionhq/client";
 import axios from "axios";
 
 export async function makeSlackRequest(
-  userId: string,
+  access_token: string,
   endpoint: string,
   method: string,
   body?: any
 ) {
-  const integration = await getIntegration(userId, "slack");
-  if (!integration) {
-    throw new Error("Slack integration not found");
-  }
-
   const res = await fetch(`https://slack.com/api/${endpoint}`, {
     method,
     headers: {
-      Authorization: `Bearer ${integration.access_token}`,
+      Authorization: `Bearer ${access_token}`,
     },
     body: JSON.stringify(body),
   });
