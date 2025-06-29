@@ -150,3 +150,55 @@ export const inviteFigmaTeamMember = tool({
     return res.data;
   },
 });
+
+// Create file
+export const createFigmaFile = tool({
+  name: "create_figma_file",
+  description: "Create a new Figma file",
+  parameters: z.object({ projectId: z.string(), name: z.string() }),
+  async execute({ projectId, name }, runContext?: RunContext<TIntegrations>) {
+    const token = runContext?.context?.["figma"].access_token!;
+    const figma = await getFigmaClient(token);
+    const res = await figma.post(`/projects/${projectId}/files`, { name });
+    return res.data;
+  },
+});
+
+// Delete file
+export const deleteFigmaFile = tool({
+  name: "delete_figma_file",
+  description: "Delete a Figma file",
+  parameters: z.object({ fileId: z.string() }),
+  async execute({ fileId }, runContext?: RunContext<TIntegrations>) {
+    const token = runContext?.context?.["figma"].access_token!;
+    const figma = await getFigmaClient(token);
+    const res = await figma.delete(`/files/${fileId}`);
+    return res.data;
+  },
+});
+
+// Update file
+export const updateFigmaFile = tool({
+  name: "update_figma_file",
+  description: "Update a Figma file",
+  parameters: z.object({ fileId: z.string(), name: z.string() }),
+  async execute({ fileId, name }, runContext?: RunContext<TIntegrations>) {
+    const token = runContext?.context?.["figma"].access_token!;
+    const figma = await getFigmaClient(token);
+    const res = await figma.put(`/files/${fileId}`, { name });
+    return res.data;
+  },
+});
+
+// Search files
+export const searchFigmaFiles = tool({
+  name: "search_figma_files",
+  description: "Search for Figma files",
+  parameters: z.object({ query: z.string() }),
+  async execute({ query }, runContext?: RunContext<TIntegrations>) {
+    const token = runContext?.context?.["figma"].access_token!;
+    const figma = await getFigmaClient(token);
+    const res = await figma.get(`/search?query=${query}`);
+    return res.data;
+  },
+});

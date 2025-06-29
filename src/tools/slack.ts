@@ -12,7 +12,7 @@ export const listSlackChannels = tool({
       runContext?.context?.["slack"].access_token!,
       "conversations.list",
       "GET",
-      { types: "public_channel" }
+      undefined
     );
     return channels.channels;
   },
@@ -246,6 +246,58 @@ export const setStatus = tool({
       "users.setPresence",
       "POST",
       { presence: args.status }
+    );
+    return response.message.text;
+  },
+});
+
+export const kickFromChannel = tool({
+  name: "kick_from_channel",
+  description: "Kick a user from a specific channel",
+  parameters: z.object({
+    channelId: z.string(),
+    userId: z.string(),
+  }),
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const response = await makeSlackRequest(
+      runContext?.context?.["slack"].access_token!,
+      "conversations.kick",
+      "POST",
+      { channel: args.channelId, user: args.userId }
+    );
+    return response.message.text;
+  },
+});
+
+export const joinChannel = tool({
+  name: "join_channel",
+  description: "Join a specific channel",
+  parameters: z.object({
+    channelId: z.string(),
+  }),
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const response = await makeSlackRequest(
+      runContext?.context?.["slack"].access_token!,
+      "conversations.join",
+      "POST",
+      { channel: args.channelId }
+    );
+    return response.message.text;
+  },
+});
+
+export const leaveChannel = tool({
+  name: "leave_channel",
+  description: "Leave a specific channel",
+  parameters: z.object({
+    channelId: z.string(),
+  }),
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const response = await makeSlackRequest(
+      runContext?.context?.["slack"].access_token!,
+      "conversations.leave",
+      "POST",
+      { channel: args.channelId }
     );
     return response.message.text;
   },

@@ -1,0 +1,45 @@
+import { Agent } from "@openai/agents";
+import { LINEAR_AGENT_PROMPT } from "../lib/prompts";
+import * as linearTools from "../tools/linear";
+
+const {
+  assignLinearIssue,
+  commentOnLinearIssue,
+  createLinearIssue,
+  getAssignedLinearIssues,
+  getLinearIssue,
+  getLinearIssueByTitle,
+  getLinearTeamById,
+  getLinearTeamByName,
+  getLinearUserByEmail,
+  getLinearUserByName,
+  getLinearUserIssues,
+  getTodoIssuesByTeamId,
+  getUnassignedIssuesByTeamId,
+  listLinearIssues,
+  listLinearTeams,
+  updateLinearIssueStatus,
+} = linearTools;
+
+export const linearAgent = new Agent({
+  name: "linear_agent",
+  instructions: LINEAR_AGENT_PROMPT,
+  tools: [
+    assignLinearIssue,
+    commentOnLinearIssue,
+    createLinearIssue,
+    getAssignedLinearIssues,
+    getLinearIssue,
+    getLinearIssueByTitle,
+    getLinearTeamById,
+    getLinearTeamByName,
+    getLinearUserByEmail,
+    getLinearUserByName,
+    getLinearUserIssues,
+    getTodoIssuesByTeamId,
+    getUnassignedIssuesByTeamId,
+    listLinearIssues,
+    listLinearTeams,
+    updateLinearIssueStatus,
+  ],
+});
