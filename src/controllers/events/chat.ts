@@ -60,6 +60,7 @@ export async function messageEvents(req: AuthRequest, res: Response) {
   const integrations = await IntegrationModel.find({
     user_id: req.user._id,
   }).lean();
+
   if (!integrations) {
     res.write(
       `event: error\ndata: ${JSON.stringify({
@@ -69,6 +70,12 @@ export async function messageEvents(req: AuthRequest, res: Response) {
     res.end();
     return;
   }
+
+  const integrationsMap = {};
+
+  integrations.forEach((integration) => {
+    integrationsMap[integration.name] = integration;
+  });
 
   const contextMessages = await getRelevantMessages(
     userMsg.content,

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { Types } from "mongoose";
 import { tool, RunContext } from "@openai/agents";
 import { makeGitHubRequest } from "../lib/githubapis";
+import { TIntegrations } from "../../types/integrations";
 
 export type UserInfo = {
   access_token: string;
@@ -18,7 +19,7 @@ export const listRepos = tool({
   parameters: z.object({
     visibility: z.enum(["all", "public", "private"]).default("all"),
   }),
-  execute: async ({ visibility }, ctx?: RunContext<UserInfo>) => {
+  execute: async ({ visibility }, ctx?: RunContext<TIntegrations>) => {
     const userId = ctx?.context?.userId?.toString();
     return makeGitHubRequest(
       `/user/repos?per_page=100&visibility=${visibility}`,
@@ -35,7 +36,7 @@ export const searchRepos = tool({
   parameters: z.object({
     query: z.string(),
   }),
-  execute: async ({ query }, ctx?: RunContext<UserInfo>) => {
+  execute: async ({ query }, ctx?: RunContext<TIntegrations>) => {
     const userId = ctx?.context?.userId?.toString();
     return makeGitHubRequest(
       `/search/repositories?q=${encodeURIComponent(query)}`,
@@ -50,7 +51,7 @@ export const getRepo = tool({
   name: "get_repo",
   description: "Get a single repository's details",
   parameters: z.object({ owner: z.string(), repo: z.string() }),
-  execute: async ({ owner, repo }, ctx?: RunContext<UserInfo>) => {
+  execute: async ({ owner, repo }, ctx?: RunContext<TIntegrations>) => {
     const userId = ctx?.context?.userId?.toString();
     return makeGitHubRequest(
       `/repos/${owner}/${repo}`,
@@ -69,7 +70,7 @@ export const createRepo = tool({
     description: z.string().nullable().optional(),
     private: z.boolean().default(false),
   }),
-  execute: async (args, ctx?: RunContext<UserInfo>) => {
+  execute: async (args, ctx?: RunContext<TIntegrations>) => {
     const userId = ctx?.context?.userId?.toString();
     return makeGitHubRequest("/user/repos", "POST", args, userId);
   },
@@ -79,7 +80,7 @@ export const deleteRepo = tool({
   name: "delete_repo",
   description: "Delete a repository",
   parameters: z.object({ owner: z.string(), repo: z.string() }),
-  execute: async ({ owner, repo }, ctx?: RunContext<UserInfo>) => {
+  execute: async ({ owner, repo }, ctx?: RunContext<TIntegrations>) => {
     const userId = ctx?.context?.userId?.toString();
     return makeGitHubRequest(
       `/repos/${owner}/${repo}`,
@@ -100,7 +101,7 @@ export const listPullRequests = tool({
     repo: z.string(),
     state: z.enum(["open", "closed", "all"]).default("open"),
   }),
-  execute: async ({ owner, repo, state }, ctx?: RunContext<UserInfo>) => {
+  execute: async ({ owner, repo, state }, ctx?: RunContext<TIntegrations>) => {
     const userId = ctx?.context?.userId?.toString();
     return makeGitHubRequest(
       `/repos/${owner}/${repo}/pulls?state=${state}`,
@@ -115,7 +116,7 @@ export const searchPullRequests = tool({
   name: "search_pull_requests",
   description: "Search pull requests by query",
   parameters: z.object({ query: z.string() }),
-  execute: async ({ query }, ctx?: RunContext<UserInfo>) => {
+  execute: async ({ query }, ctx?: RunContext<TIntegrations>) => {
     const userId = ctx?.context?.userId?.toString();
     return makeGitHubRequest(
       `/search/issues?q=is:pr+${encodeURIComponent(query)}`,
@@ -137,7 +138,7 @@ export const createPullRequest = tool({
     base: z.string(),
     body: z.string().nullable().optional(),
   }),
-  execute: async (args, ctx?: RunContext<UserInfo>) => {
+  execute: async (args, ctx?: RunContext<TIntegrations>) => {
     const userId = ctx?.context?.userId?.toString();
     return makeGitHubRequest(
       `/repos/${args.owner}/${args.repo}/pulls`,
@@ -159,7 +160,10 @@ export const mergePullRequest = tool({
     commit_message: z.string().nullable().optional(),
     merge_method: z.enum(["merge", "squash", "rebase"]).nullable().optional(),
   }),
-  execute: async ({ owner, repo, ...rest }, ctx?: RunContext<UserInfo>) => {
+  execute: async (
+    { owner, repo, ...rest },
+    ctx?: RunContext<TIntegrations>
+  ) => {
     const userId = ctx?.context?.userId?.toString();
     return makeGitHubRequest(
       `/repos/${owner}/${repo}/pulls/${rest.pull_number}/merge`,
@@ -181,7 +185,7 @@ export const listIssues = tool({
       .default("assigned"),
     state: z.enum(["open", "closed", "all"]).default("open"),
   }),
-  execute: async ({ filter, state }, ctx?: RunContext<UserInfo>) => {
+  execute: async ({ filter, state }, ctx?: RunContext<TIntegrations>) => {
     const userId = ctx?.context?.userId?.toString();
     return makeGitHubRequest(
       `/issues?filter=${filter}&state=${state}`,
@@ -196,7 +200,7 @@ export const searchIssues = tool({
   name: "search_issues",
   description: "Search issues by query",
   parameters: z.object({ query: z.string() }),
-  execute: async ({ query }, ctx?: RunContext<UserInfo>) => {
+  execute: async ({ query }, ctx?: RunContext<TIntegrations>) => {
     const userId = ctx?.context?.userId?.toString();
     return makeGitHubRequest(
       `/search/issues?q=is:issue+${encodeURIComponent(query)}`,
@@ -216,7 +220,7 @@ export const createIssue = tool({
     title: z.string(),
     body: z.string().nullable().optional(),
   }),
-  execute: async (args, ctx?: RunContext<UserInfo>) => {
+  execute: async (args, ctx?: RunContext<TIntegrations>) => {
     const userId = ctx?.context?.userId?.toString();
     return makeGitHubRequest(
       `/repos/${args.owner}/${args.repo}/issues`,
@@ -240,7 +244,7 @@ export const updateIssue = tool({
   }),
   execute: async (
     { owner, repo, issue_number, ...rest },
-    ctx?: RunContext<UserInfo>
+    ctx?: RunContext<TIntegrations>
   ) => {
     const userId = ctx?.context?.userId?.toString();
     return makeGitHubRequest(
@@ -263,7 +267,7 @@ export const commentOnIssue = tool({
   }),
   execute: async (
     { owner, repo, issue_number, body },
-    ctx?: RunContext<UserInfo>
+    ctx?: RunContext<TIntegrations>
   ) => {
     const userId = ctx?.context?.userId?.toString();
     return makeGitHubRequest(
@@ -285,7 +289,7 @@ export const listIssueComments = tool({
   }),
   execute: async (
     { owner, repo, issue_number },
-    ctx?: RunContext<UserInfo>
+    ctx?: RunContext<TIntegrations>
   ) => {
     const userId = ctx?.context?.userId?.toString();
     return makeGitHubRequest(
@@ -306,7 +310,7 @@ export const listNotifications = tool({
     all: z.boolean().default(false),
     participating: z.boolean().default(false),
   }),
-  execute: async ({ all, participating }, ctx?: RunContext<UserInfo>) => {
+  execute: async ({ all, participating }, ctx?: RunContext<TIntegrations>) => {
     const userId = ctx?.context?.userId?.toString();
     return makeGitHubRequest(
       `/notifications?all=${all}&participating=${participating}`,
@@ -321,7 +325,7 @@ export const markAllNotificationsRead = tool({
   name: "mark_all_notifications_read",
   description: "Mark all GitHub notifications as read",
   parameters: z.object({}),
-  execute: async (_, ctx?: RunContext<UserInfo>) => {
+  execute: async (_, ctx?: RunContext<TIntegrations>) => {
     const userId = ctx?.context?.userId?.toString();
     return makeGitHubRequest(`/notifications`, "PUT", undefined, userId);
   },

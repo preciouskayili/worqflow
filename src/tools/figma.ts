@@ -1,22 +1,15 @@
 import { z } from "zod";
-import { Types } from "mongoose";
 import { tool, RunContext } from "@openai/agents";
 import { getFigmaClient } from "../lib/misc";
-
-export type UserInfo = {
-  access_token: string;
-  refresh_token: string;
-  expires_at?: string;
-  userId: string | Types.ObjectId;
-};
+import { TIntegrations } from "../../types/integrations";
 
 // List team projects
 export const listFigmaProjects = tool({
   name: "list_figma_projects",
   description: "List Figma projects for a team",
   parameters: z.object({ teamId: z.string() }),
-  async execute({ teamId }, runContext?: RunContext<UserInfo>) {
-    const token = runContext?.context?.access_token!;
+  async execute({ teamId }, runContext?: RunContext<TIntegrations>) {
+    const token = runContext?.context?.["figma"].access_token!;
     const figma = await getFigmaClient(token);
     const res = await figma.get(`/teams/${teamId}/projects`);
     return res.data;
@@ -28,8 +21,8 @@ export const listFigmaFiles = tool({
   name: "list_figma_files",
   description: "List Figma files in a project",
   parameters: z.object({ projectId: z.string() }),
-  async execute({ projectId }, runContext?: RunContext<UserInfo>) {
-    const token = runContext?.context?.access_token!;
+  async execute({ projectId }, runContext?: RunContext<TIntegrations>) {
+    const token = runContext?.context?.["figma"].access_token!;
     const figma = await getFigmaClient(token);
     const res = await figma.get(`/projects/${projectId}/files`);
     return res.data;
@@ -41,8 +34,8 @@ export const getFigmaFile = tool({
   name: "get_figma_file",
   description: "Get details of a Figma file",
   parameters: z.object({ fileId: z.string() }),
-  async execute({ fileId }, runContext?: RunContext<UserInfo>) {
-    const token = runContext?.context?.access_token!;
+  async execute({ fileId }, runContext?: RunContext<TIntegrations>) {
+    const token = runContext?.context?.["figma"].access_token!;
     const figma = await getFigmaClient(token);
     const res = await figma.get(`/files/${fileId}`);
     return res.data;
@@ -54,8 +47,8 @@ export const getFigmaFileNodes = tool({
   name: "get_figma_file_nodes",
   description: "Get specific nodes from a Figma file",
   parameters: z.object({ fileId: z.string(), nodeIds: z.array(z.string()) }),
-  async execute({ fileId, nodeIds }, runContext?: RunContext<UserInfo>) {
-    const token = runContext?.context?.access_token!;
+  async execute({ fileId, nodeIds }, runContext?: RunContext<TIntegrations>) {
+    const token = runContext?.context?.["figma"].access_token!;
     const figma = await getFigmaClient(token);
     const params = nodeIds.map((id) => `ids=${id}`).join("&");
     const res = await figma.get(`/files/${fileId}/nodes?${params}`);
@@ -68,8 +61,8 @@ export const getFigmaFileComponents = tool({
   name: "get_figma_file_components",
   description: "List components defined in a Figma file",
   parameters: z.object({ fileId: z.string() }),
-  async execute({ fileId }, runContext?: RunContext<UserInfo>) {
-    const token = runContext?.context?.access_token!;
+  async execute({ fileId }, runContext?: RunContext<TIntegrations>) {
+    const token = runContext?.context?.["figma"].access_token!;
     const figma = await getFigmaClient(token);
     const res = await figma.get(`/files/${fileId}/components`);
     return res.data;
@@ -85,8 +78,11 @@ export const exportFigmaImages = tool({
     nodeIds: z.array(z.string()),
     scale: z.number().optional(),
   }),
-  async execute({ fileId, nodeIds, scale }, runContext?: RunContext<UserInfo>) {
-    const token = runContext?.context?.access_token!;
+  async execute(
+    { fileId, nodeIds, scale },
+    runContext?: RunContext<TIntegrations>
+  ) {
+    const token = runContext?.context?.["figma"].access_token!;
     const figma = await getFigmaClient(token);
     const params = new URLSearchParams();
     params.set("ids", nodeIds.join(","));
@@ -101,8 +97,8 @@ export const getFigmaFileComments = tool({
   name: "get_figma_file_comments",
   description: "List comments on a Figma file",
   parameters: z.object({ fileId: z.string() }),
-  async execute({ fileId }, runContext?: RunContext<UserInfo>) {
-    const token = runContext?.context?.access_token!;
+  async execute({ fileId }, runContext?: RunContext<TIntegrations>) {
+    const token = runContext?.context?.["figma"].access_token!;
     const figma = await getFigmaClient(token);
     const res = await figma.get(`/files/${fileId}/comments`);
     return res.data;
@@ -114,8 +110,8 @@ export const listFigmaNotifications = tool({
   name: "list_figma_notifications",
   description: "List Figma notifications for the user",
   parameters: z.object({}),
-  async execute(_, runContext?: RunContext<UserInfo>) {
-    const token = runContext?.context?.access_token!;
+  async execute(_, runContext?: RunContext<TIntegrations>) {
+    const token = runContext?.context?.["figma"].access_token!;
     const figma = await getFigmaClient(token);
     const res = await figma.get(`/user/notifications`);
     return res.data;
@@ -127,8 +123,8 @@ export const listFigmaTeamMembers = tool({
   name: "list_figma_team_members",
   description: "List members of a Figma team",
   parameters: z.object({ teamId: z.string() }),
-  async execute({ teamId }, runContext?: RunContext<UserInfo>) {
-    const token = runContext?.context?.access_token!;
+  async execute({ teamId }, runContext?: RunContext<TIntegrations>) {
+    const token = runContext?.context?.["figma"].access_token!;
     const figma = await getFigmaClient(token);
     const res = await figma.get(`/teams/${teamId}/members`);
     return res.data;
@@ -144,8 +140,11 @@ export const inviteFigmaTeamMember = tool({
     email: z.string(),
     role: z.enum(["viewer", "editor", "owner"]),
   }),
-  async execute({ teamId, email, role }, runContext?: RunContext<UserInfo>) {
-    const token = runContext?.context?.access_token!;
+  async execute(
+    { teamId, email, role },
+    runContext?: RunContext<TIntegrations>
+  ) {
+    const token = runContext?.context?.["figma"].access_token!;
     const figma = await getFigmaClient(token);
     const res = await figma.post(`/teams/${teamId}/members`, { email, role });
     return res.data;

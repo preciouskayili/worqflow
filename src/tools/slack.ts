@@ -1,15 +1,15 @@
 import { tool, RunContext } from "@openai/agents";
-import { UserInfo } from "../../types/user";
 import { makeSlackRequest } from "../lib/misc";
 import { z } from "zod";
+import { TIntegrations } from "../../types/integrations";
 
 export const listSlackChannels = tool({
   name: "list_slack_channels",
   description: "List all channels in the Slack workspace",
   parameters: z.object({}),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const channels = await makeSlackRequest(
-      runContext?.context.userId.toString()!,
+      runContext?.context?.["slack"].access_token!,
       "conversations.list",
       "GET",
       { types: "public_channel" }
@@ -24,9 +24,9 @@ export const getChannelInfo = tool({
   parameters: z.object({
     channelId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const channel = await makeSlackRequest(
-      runContext?.context.userId.toString()!,
+      runContext?.context?.["slack"].access_token!,
       "conversations.info",
       "GET",
       { channel: args.channelId }
@@ -41,9 +41,9 @@ export const getUserInfo = tool({
   parameters: z.object({
     userId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const user = await makeSlackRequest(
-      runContext?.context.userId.toString()!,
+      runContext?.context?.["slack"].access_token!,
       "users.info",
       "GET",
       { user: args.userId }
@@ -58,9 +58,9 @@ export const getChannelMessages = tool({
   parameters: z.object({
     channelId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const messages = await makeSlackRequest(
-      runContext?.context.userId.toString()!,
+      runContext?.context?.["slack"].access_token!,
       "conversations.history",
       "GET",
       { channel: args.channelId }
@@ -76,9 +76,9 @@ export const sendMessage = tool({
     channelId: z.string(),
     message: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const response = await makeSlackRequest(
-      runContext?.context.userId.toString()!,
+      runContext?.context?.["slack"].access_token!,
       "chat.postMessage",
       "POST",
       { channel: args.channelId, text: args.message }
@@ -95,9 +95,9 @@ export const scheduleMessage = tool({
     message: z.string(),
     scheduledTime: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const response = await makeSlackRequest(
-      runContext?.context.userId.toString()!,
+      runContext?.context?.["slack"].access_token!,
       "chat.scheduleMessage",
       "POST",
       {
@@ -116,9 +116,9 @@ export const deleteScheduledMessage = tool({
   parameters: z.object({
     scheduledMessageId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const response = await makeSlackRequest(
-      runContext?.context.userId.toString()!,
+      runContext?.context?.["slack"].access_token!,
       "chat.deleteScheduledMessage",
       "POST",
       { scheduled_message_id: args.scheduledMessageId }
@@ -134,9 +134,9 @@ export const updateScheduledMessage = tool({
     scheduledMessageId: z.string(),
     message: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const response = await makeSlackRequest(
-      runContext?.context.userId.toString()!,
+      runContext?.context?.["slack"].access_token!,
       "chat.updateScheduledMessage",
       "POST",
       { scheduled_message_id: args.scheduledMessageId, text: args.message }
@@ -151,9 +151,9 @@ export const getScheduledMessages = tool({
   parameters: z.object({
     channelId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const response = await makeSlackRequest(
-      runContext?.context.userId.toString()!,
+      runContext?.context?.["slack"].access_token!,
       "chat.getScheduledMessages",
       "GET",
       { channel: args.channelId }
@@ -169,9 +169,9 @@ export const deleteMessage = tool({
     channelId: z.string(),
     messageId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const response = await makeSlackRequest(
-      runContext?.context.userId.toString()!,
+      runContext?.context?.["slack"].access_token!,
       "chat.delete",
       "POST",
       { channel: args.channelId, ts: args.messageId }
@@ -187,9 +187,9 @@ export const sendEphemeralMessage = tool({
     userId: z.string(),
     message: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const response = await makeSlackRequest(
-      runContext?.context.userId.toString()!,
+      runContext?.context?.["slack"].access_token!,
       "chat.postEphemeral",
       "POST",
       { channel: args.channelId, text: args.message, user: args.userId }
@@ -206,9 +206,9 @@ export const updateMessage = tool({
     messageId: z.string(),
     message: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const response = await makeSlackRequest(
-      runContext?.context.userId.toString()!,
+      runContext?.context?.["slack"].access_token!,
       "chat.update",
       "POST",
       { channel: args.channelId, ts: args.messageId, text: args.message }
@@ -223,9 +223,9 @@ export const getPresence = tool({
   parameters: z.object({
     userId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const response = await makeSlackRequest(
-      runContext?.context.userId.toString()!,
+      runContext?.context?.["slack"].access_token!,
       "users.getPresence",
       "GET",
       { user: args.userId }
@@ -240,9 +240,9 @@ export const setStatus = tool({
   parameters: z.object({
     status: z.enum(["auto", "away"]),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const response = await makeSlackRequest(
-      runContext?.context.userId.toString()!,
+      runContext?.context?.["slack"].access_token!,
       "users.setPresence",
       "POST",
       { presence: args.status }
@@ -258,9 +258,9 @@ export const inviteToChannel = tool({
     channelId: z.string(),
     userId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const response = await makeSlackRequest(
-      runContext?.context.userId.toString()!,
+      runContext?.context?.["slack"].access_token!,
       "conversations.invite",
       "POST",
       { channel: args.channelId, users: args.userId }
@@ -277,9 +277,9 @@ export const addReaction = tool({
     messageId: z.string(),
     reaction: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const response = await makeSlackRequest(
-      runContext?.context.userId.toString()!,
+      runContext?.context?.["slack"].access_token!,
       "reactions.add",
       "POST",
       {
@@ -300,9 +300,9 @@ export const removeReaction = tool({
     messageId: z.string(),
     reaction: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const response = await makeSlackRequest(
-      runContext?.context.userId.toString()!,
+      runContext?.context?.["slack"].access_token!,
       "reactions.remove",
       "POST",
       {
@@ -322,9 +322,9 @@ export const unpinMessage = tool({
     channelId: z.string(),
     messageId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const response = await makeSlackRequest(
-      runContext?.context.userId.toString()!,
+      runContext?.context?.["slack"].access_token!,
       "pins.remove",
       "POST",
       { channel: args.channelId, timestamp: args.messageId }
@@ -340,9 +340,9 @@ export const pinMessage = tool({
     channelId: z.string(),
     messageId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const response = await makeSlackRequest(
-      runContext?.context.userId.toString()!,
+      runContext?.context?.["slack"].access_token!,
       "pins.add",
       "POST",
       { channel: args.channelId, timestamp: args.messageId }
@@ -358,9 +358,9 @@ export const uploadFile = tool({
     channelId: z.string(),
     file: z.instanceof(File),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const response = await makeSlackRequest(
-      runContext?.context.userId.toString()!,
+      runContext?.context?.["slack"].access_token!,
       "files.upload",
       "POST",
       { channel: args.channelId, file: args.file }
@@ -373,9 +373,9 @@ export const getUnreadMessages = tool({
   name: "get_unread_messages",
   description: "Get unread messages from all joined channels",
   parameters: z.object({}),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const response = await makeSlackRequest(
-      runContext?.context.userId.toString()!,
+      runContext?.context?.["slack"].access_token!,
       "conversations.list",
       "GET",
       { exclude_archived: true }
@@ -384,7 +384,7 @@ export const getUnreadMessages = tool({
     const unreadMessages: any[] = [];
     for (const channel of channels) {
       const channelInfo = await makeSlackRequest(
-        runContext?.context.userId.toString()!,
+        runContext?.context?.["slack"].access_token!,
         "conversations.info",
         "GET",
         { channel: channel.id }
@@ -392,7 +392,7 @@ export const getUnreadMessages = tool({
       const unreadCount = channelInfo.channel.unread_count_display;
       if (unreadCount === 0) continue;
       const history = await makeSlackRequest(
-        runContext?.context.userId.toString()!,
+        runContext?.context?.["slack"].access_token!,
         "conversations.history",
         "GET",
         { channel: channel.id, limit: unreadCount }
@@ -415,9 +415,9 @@ export const archiveChannel = tool({
   parameters: z.object({
     channelId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const response = await makeSlackRequest(
-      runContext?.context.userId.toString()!,
+      runContext?.context?.["slack"].access_token!,
       "conversations.archive",
       "POST",
       { channel: args.channelId }
@@ -433,9 +433,9 @@ export const unarchiveChannel = tool({
   parameters: z.object({
     channelId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const response = await makeSlackRequest(
-      runContext?.context.userId.toString()!,
+      runContext?.context?.["slack"].access_token!,
       "conversations.unarchive",
       "POST",
       { channel: args.channelId }
@@ -450,9 +450,9 @@ export const getChannelMembers = tool({
   parameters: z.object({
     channelId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const response = await makeSlackRequest(
-      runContext?.context.userId.toString()!,
+      runContext?.context?.["slack"].access_token!,
       "conversations.members",
       "GET",
       { channel: args.channelId }
