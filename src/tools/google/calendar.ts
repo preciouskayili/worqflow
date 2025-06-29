@@ -4,14 +4,7 @@ import { getCalendarService } from "../../lib/googleapis";
 import { getDayBoundsInUTC, formatEvent } from "../../lib/misc";
 import { calendar_v3 } from "googleapis";
 import { RunContext } from "@openai/agents";
-import { Types } from "mongoose";
-
-type UserInfo = {
-  access_token: string;
-  refresh_token: string;
-  expires_at?: string;
-  userId: string | Types.ObjectId;
-};
+import { TIntegrations } from "../../../types/integrations";
 
 export const createCalendarList = tool({
   name: "create_calendar_list",
@@ -20,8 +13,14 @@ export const createCalendarList = tool({
     calendarName: z.string(),
     attendees: z.array(z.string()).nullable().default(null),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
-    const service = await getCalendarService(runContext?.context!);
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getCalendarService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
+
     const res = await service.calendars.insert({
       requestBody: { summary: args.calendarName },
     });
@@ -37,8 +36,14 @@ export const listCalendarList = tool({
     maxCapacity: z.number().int().positive(),
     userId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
-    const service = await getCalendarService(runContext?.context!);
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getCalendarService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
+
     const res = await service.calendarList.list({
       maxResults: Math.min(200, args.maxCapacity),
     });
@@ -60,8 +65,14 @@ export const listCalendarEvents = tool({
     maxCapacity: z.number().int().positive(),
     userId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
-    const service = await getCalendarService(runContext?.context!);
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getCalendarService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
+
     const res = await service.events.list({
       calendarId: args.calendarId,
       maxResults: args.maxCapacity,
@@ -82,8 +93,14 @@ export const listEventsForDate = tool({
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Expected format: YYYY-MM-DD"),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
-    const service = await getCalendarService(runContext?.context!);
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getCalendarService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
+
     const date = new Date(args.date);
     const { timeMin, timeMax } = getDayBoundsInUTC(date, "Africa/Lagos");
 
@@ -112,8 +129,14 @@ export const listEventsInRange = tool({
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Expected format: YYYY-MM-DD"),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
-    const service = await getCalendarService(runContext?.context!);
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getCalendarService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
+
     const { timeMin } = getDayBoundsInUTC(
       new Date(args.startDate),
       "Africa/Lagos"
@@ -144,8 +167,14 @@ export const listCurrentCalendarEvents = tool({
     maxCapacity: z.number().int().positive(),
     userId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
-    const service = await getCalendarService(runContext?.context!);
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getCalendarService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
+
     const { timeMin } = getDayBoundsInUTC(new Date(), "Africa/Lagos");
 
     const res = await service.events.list({
@@ -175,8 +204,14 @@ export const listTodaysEvents = tool({
     calendarId: z.string(),
     userId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
-    const service = await getCalendarService(runContext?.context!);
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getCalendarService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
+
     const { timeMin, timeMax } = getDayBoundsInUTC(new Date(), "Africa/Lagos");
 
     const res = await service.events.list({
@@ -198,76 +233,105 @@ export const insertCalendarEvent = tool({
     summary: z.string(),
     startTime: z.string(),
     endTime: z.string(),
-    description: z.string(),
-    location: z.string(),
+    description: z.string().nullable().default(null),
     attendees: z.array(z.string()).nullable().default(null),
-    timezone: z.string(),
-    createGoogleMeet: z.boolean(),
-    userId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
-    const service = await getCalendarService(runContext?.context!);
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getCalendarService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
 
-    const eventBody: calendar_v3.Schema$Event = {
+    const event: calendar_v3.Schema$Event = {
       summary: args.summary,
-      location: args.location,
-      description: args.description,
-      start: { dateTime: args.startTime, timeZone: args.timezone },
-      end: { dateTime: args.endTime, timeZone: args.timezone },
-      attendees: args.attendees?.map((email) => ({ email })),
-      conferenceData: args.createGoogleMeet
-        ? {
-            createRequest: {
-              requestId: `meet_${Date.now()}`,
-              conferenceSolutionKey: { type: "hangoutsMeet" },
-            },
-          }
-        : undefined,
+      description: args.description || undefined,
+      start: {
+        dateTime: args.startTime,
+        timeZone: "Africa/Lagos",
+      },
+      end: {
+        dateTime: args.endTime,
+        timeZone: "Africa/Lagos",
+      },
+      attendees: args.attendees?.map((email) => ({ email })) || undefined,
     };
 
     const res = await service.events.insert({
       calendarId: args.calendarId,
-      requestBody: eventBody,
-      conferenceDataVersion: args.createGoogleMeet ? 1 : undefined,
+      requestBody: event,
     });
-    return formatEvent(res.data);
-  },
-});
 
-export const deleteCalendarEvent = tool({
-  name: "delete_calendar_event",
-  description: "Deletes an event from a calendar",
-  parameters: z.object({
-    calendarId: z.string(),
-    eventId: z.string(),
-    userId: z.string(),
-  }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
-    const service = await getCalendarService(runContext?.context!);
-
-    const res = await service.events.delete({
-      calendarId: args.calendarId,
-      eventId: args.eventId,
-    });
     return res.data;
   },
 });
 
 export const updateCalendarEvent = tool({
   name: "update_calendar_event",
-  description: "Updates an event in a calendar",
+  description: "Updates an existing calendar event",
   parameters: z.object({
     calendarId: z.string(),
     eventId: z.string(),
-    userId: z.string(),
+    summary: z.string().nullable().default(null),
+    startTime: z.string().nullable().default(null),
+    endTime: z.string().nullable().default(null),
+    description: z.string().nullable().default(null),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
-    const service = await getCalendarService(runContext?.context!);
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getCalendarService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
+
+    const event: calendar_v3.Schema$Event = {};
+    if (args.summary) event.summary = args.summary;
+    if (args.description) event.description = args.description;
+    if (args.startTime) {
+      event.start = {
+        dateTime: args.startTime,
+        timeZone: "Africa/Lagos",
+      };
+    }
+    if (args.endTime) {
+      event.end = {
+        dateTime: args.endTime,
+        timeZone: "Africa/Lagos",
+      };
+    }
+
     const res = await service.events.update({
       calendarId: args.calendarId,
       eventId: args.eventId,
-      requestBody: args.event,
+      requestBody: event,
     });
+
     return res.data;
+  },
+});
+
+export const deleteCalendarEvent = tool({
+  name: "delete_calendar_event",
+  description: "Deletes a calendar event",
+  parameters: z.object({
+    calendarId: z.string(),
+    eventId: z.string(),
+  }),
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getCalendarService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
+
+    await service.events.delete({
+      calendarId: args.calendarId,
+      eventId: args.eventId,
+    });
+
+    return { success: true };
   },
 });

@@ -1,7 +1,7 @@
 import { tool, RunContext } from "@openai/agents";
 import { z } from "zod";
 import { getLinearClient } from "../lib/misc";
-import { UserInfo } from "../../types/user";
+import { TIntegrations } from "../../types/integrations";
 
 export const listLinearIssues = tool({
   name: "list_linear_issues",
@@ -10,9 +10,9 @@ export const listLinearIssues = tool({
     status: z.string().optional(),
     teamId: z.string().optional(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const linear = await getLinearClient(
-      runContext?.context.userId.toString()!
+      runContext?.context?.["linear"].access_token!
     );
     const res = await linear.issues({
       filter: {
@@ -33,9 +33,9 @@ export const createLinearIssue = tool({
     title: z.string(),
     description: z.string().optional(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const linear = await getLinearClient(
-      runContext?.context.userId.toString()!
+      runContext?.context?.["linear"].access_token!
     );
     const res = await linear.createIssue({
       teamId: args.teamId,
@@ -53,9 +53,9 @@ export const commentOnLinearIssue = tool({
     issueId: z.string(),
     body: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const linear = await getLinearClient(
-      runContext?.context.userId.toString()!
+      runContext?.context?.["linear"].access_token!
     );
     const res = await linear.createComment({
       issueId: args.issueId,
@@ -71,9 +71,9 @@ export const getLinearUserByName = tool({
   parameters: z.object({
     name: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const linear = await getLinearClient(
-      runContext?.context.userId.toString()!
+      runContext?.context?.["linear"].access_token!
     );
     const res = await linear.users({
       first: 1,
@@ -91,9 +91,9 @@ export const getLinearUserByEmail = tool({
   parameters: z.object({
     email: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const linear = await getLinearClient(
-      runContext?.context.userId.toString()!
+      runContext?.context?.["linear"].access_token!
     );
     const res = await linear.users({
       first: 1,
@@ -111,9 +111,9 @@ export const getLinearUserIssues = tool({
   parameters: z.object({
     userName: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const linear = await getLinearClient(
-      runContext?.context.userId.toString()!
+      runContext?.context?.["linear"].access_token!
     );
     const res = await linear.issues({
       filter: { assignee: { name: { eq: args.userName } } },
@@ -128,9 +128,9 @@ export const getLinearIssueByTitle = tool({
   parameters: z.object({
     title: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const linear = await getLinearClient(
-      runContext?.context.userId.toString()!
+      runContext?.context?.["linear"].access_token!
     );
     const res = await linear.issues({
       filter: { title: { eq: args.title } },
@@ -145,9 +145,9 @@ export const getLinearTeamByName = tool({
   parameters: z.object({
     name: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const linear = await getLinearClient(
-      runContext?.context.userId.toString()!
+      runContext?.context?.["linear"].access_token!
     );
     const res = await linear.teams({
       first: 1,
@@ -163,9 +163,9 @@ export const getLinearTeamById = tool({
   parameters: z.object({
     id: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const linear = await getLinearClient(
-      runContext?.context.userId.toString()!
+      runContext?.context?.["linear"].access_token!
     );
     const res = await linear.team(args.id);
     return res;
@@ -176,9 +176,9 @@ export const listLinearTeams = tool({
   name: "list_linear_teams",
   description: "List all Linear teams",
   parameters: z.object({}),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const linear = await getLinearClient(
-      runContext?.context.userId.toString()!
+      runContext?.context?.["linear"].access_token!
     );
     const res = await linear.teams();
     return res.nodes;
@@ -192,9 +192,9 @@ export const updateLinearIssueStatus = tool({
     issueId: z.string(),
     stateId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const linear = await getLinearClient(
-      runContext?.context.userId.toString()!
+      runContext?.context?.["linear"].access_token!
     );
     const res = await linear.updateIssue(args.issueId, {
       stateId: args.stateId,
@@ -209,9 +209,9 @@ export const getTodoIssuesByTeamId = tool({
   parameters: z.object({
     teamId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const linear = await getLinearClient(
-      runContext?.context.userId.toString()!
+      runContext?.context?.["linear"].access_token!
     );
     const res = await linear.issues({
       filter: {
@@ -229,9 +229,9 @@ export const getUnassignedIssuesByTeamId = tool({
   parameters: z.object({
     teamId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const linear = await getLinearClient(
-      runContext?.context.userId.toString()!
+      runContext?.context?.["linear"].access_token!
     );
     const res = await linear.issues({
       filter: {
@@ -249,9 +249,9 @@ export const getLinearIssue = tool({
   parameters: z.object({
     issueId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const linear = await getLinearClient(
-      runContext?.context.userId.toString()!
+      runContext?.context?.["linear"].access_token!
     );
     const res = await linear.issue(args.issueId);
     return res;
@@ -262,9 +262,9 @@ export const getAssignedLinearIssues = tool({
   name: "get_assigned_linear_issues",
   description: "Get all Linear issues assigned to the user",
   parameters: z.object({}),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const linear = await getLinearClient(
-      runContext?.context.userId.toString()!
+      runContext?.context?.["linear"].access_token!
     );
     const res = await linear.issues({
       filter: {
@@ -282,9 +282,9 @@ export const assignLinearIssue = tool({
     issueId: z.string(),
     assigneeId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
+  async execute(args, runContext?: RunContext<TIntegrations>) {
     const linear = await getLinearClient(
-      runContext?.context.userId.toString()!
+      runContext?.context?.["linear"].access_token!
     );
     const res = await linear.updateIssue(args.issueId, {
       assigneeId: args.assigneeId,

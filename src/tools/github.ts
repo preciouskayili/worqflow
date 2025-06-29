@@ -1,16 +1,8 @@
-// githubTools.ts
 import { z } from "zod";
 import { Types } from "mongoose";
 import { tool, RunContext } from "@openai/agents";
 import { makeGitHubRequest } from "../lib/githubapis";
 import { TIntegrations } from "../../types/integrations";
-
-export type UserInfo = {
-  access_token: string;
-  refresh_token: string;
-  expires_at?: string;
-  userId: string | Types.ObjectId;
-};
 
 // --- REPOSITORIES ---
 export const listRepos = tool({
@@ -20,12 +12,12 @@ export const listRepos = tool({
     visibility: z.enum(["all", "public", "private"]).default("all"),
   }),
   execute: async ({ visibility }, ctx?: RunContext<TIntegrations>) => {
-    const userId = ctx?.context?.userId?.toString();
+    const access_token = ctx?.context?.["github"].access_token;
     return makeGitHubRequest(
       `/user/repos?per_page=100&visibility=${visibility}`,
       "GET",
       undefined,
-      userId
+      access_token
     );
   },
 });
@@ -37,12 +29,32 @@ export const searchRepos = tool({
     query: z.string(),
   }),
   execute: async ({ query }, ctx?: RunContext<TIntegrations>) => {
-    const userId = ctx?.context?.userId?.toString();
+    const access_token = ctx?.context?.["github"].access_token;
     return makeGitHubRequest(
       `/search/repositories?q=${encodeURIComponent(query)}`,
       "GET",
       undefined,
-      userId
+      access_token
+    );
+  },
+});
+
+export const searchGithub = tool({
+  name: "search_github",
+  description:
+    "Search GitHub for repositories, issues, pull requests, and more",
+  parameters: z.object({
+    query: z.string(),
+    type: z.enum(["repositories", "issues", "pulls"]).default("repositories"),
+  }),
+  execute: async ({ query, type }, ctx?: RunContext<TIntegrations>) => {
+    const access_token = ctx?.context?.["github"].access_token;
+
+    return makeGitHubRequest(
+      `/search/${type}?q=${encodeURIComponent(query)}`,
+      "GET",
+      undefined,
+      access_token
     );
   },
 });
@@ -52,12 +64,12 @@ export const getRepo = tool({
   description: "Get a single repository's details",
   parameters: z.object({ owner: z.string(), repo: z.string() }),
   execute: async ({ owner, repo }, ctx?: RunContext<TIntegrations>) => {
-    const userId = ctx?.context?.userId?.toString();
+    const access_token = ctx?.context?.["github"].access_token;
     return makeGitHubRequest(
       `/repos/${owner}/${repo}`,
       "GET",
       undefined,
-      userId
+      access_token
     );
   },
 });
@@ -71,8 +83,8 @@ export const createRepo = tool({
     private: z.boolean().default(false),
   }),
   execute: async (args, ctx?: RunContext<TIntegrations>) => {
-    const userId = ctx?.context?.userId?.toString();
-    return makeGitHubRequest("/user/repos", "POST", args, userId);
+    const access_token = ctx?.context?.["github"].access_token;
+    return makeGitHubRequest("/user/repos", "POST", args, access_token);
   },
 });
 
@@ -81,12 +93,12 @@ export const deleteRepo = tool({
   description: "Delete a repository",
   parameters: z.object({ owner: z.string(), repo: z.string() }),
   execute: async ({ owner, repo }, ctx?: RunContext<TIntegrations>) => {
-    const userId = ctx?.context?.userId?.toString();
+    const access_token = ctx?.context?.["github"].access_token;
     return makeGitHubRequest(
       `/repos/${owner}/${repo}`,
       "DELETE",
       undefined,
-      userId
+      access_token
     );
   },
 });
@@ -102,12 +114,12 @@ export const listPullRequests = tool({
     state: z.enum(["open", "closed", "all"]).default("open"),
   }),
   execute: async ({ owner, repo, state }, ctx?: RunContext<TIntegrations>) => {
-    const userId = ctx?.context?.userId?.toString();
+    const access_token = ctx?.context?.["github"].access_token;
     return makeGitHubRequest(
       `/repos/${owner}/${repo}/pulls?state=${state}`,
       "GET",
       undefined,
-      userId
+      access_token
     );
   },
 });
@@ -117,12 +129,12 @@ export const searchPullRequests = tool({
   description: "Search pull requests by query",
   parameters: z.object({ query: z.string() }),
   execute: async ({ query }, ctx?: RunContext<TIntegrations>) => {
-    const userId = ctx?.context?.userId?.toString();
+    const access_token = ctx?.context?.["github"].access_token;
     return makeGitHubRequest(
       `/search/issues?q=is:pr+${encodeURIComponent(query)}`,
       "GET",
       undefined,
-      userId
+      access_token
     );
   },
 });
@@ -139,12 +151,12 @@ export const createPullRequest = tool({
     body: z.string().nullable().optional(),
   }),
   execute: async (args, ctx?: RunContext<TIntegrations>) => {
-    const userId = ctx?.context?.userId?.toString();
+    const access_token = ctx?.context?.["github"].access_token;
     return makeGitHubRequest(
       `/repos/${args.owner}/${args.repo}/pulls`,
       "POST",
       args,
-      userId
+      access_token
     );
   },
 });
@@ -164,12 +176,12 @@ export const mergePullRequest = tool({
     { owner, repo, ...rest },
     ctx?: RunContext<TIntegrations>
   ) => {
-    const userId = ctx?.context?.userId?.toString();
+    const access_token = ctx?.context?.["github"].access_token;
     return makeGitHubRequest(
       `/repos/${owner}/${repo}/pulls/${rest.pull_number}/merge`,
       "PUT",
       rest,
-      userId
+      access_token
     );
   },
 });
@@ -186,12 +198,12 @@ export const listIssues = tool({
     state: z.enum(["open", "closed", "all"]).default("open"),
   }),
   execute: async ({ filter, state }, ctx?: RunContext<TIntegrations>) => {
-    const userId = ctx?.context?.userId?.toString();
+    const access_token = ctx?.context?.["github"].access_token;
     return makeGitHubRequest(
       `/issues?filter=${filter}&state=${state}`,
       "GET",
       undefined,
-      userId
+      access_token
     );
   },
 });
@@ -201,12 +213,12 @@ export const searchIssues = tool({
   description: "Search issues by query",
   parameters: z.object({ query: z.string() }),
   execute: async ({ query }, ctx?: RunContext<TIntegrations>) => {
-    const userId = ctx?.context?.userId?.toString();
+    const access_token = ctx?.context?.["github"].access_token;
     return makeGitHubRequest(
       `/search/issues?q=is:issue+${encodeURIComponent(query)}`,
       "GET",
       undefined,
-      userId
+      access_token
     );
   },
 });
@@ -221,12 +233,12 @@ export const createIssue = tool({
     body: z.string().nullable().optional(),
   }),
   execute: async (args, ctx?: RunContext<TIntegrations>) => {
-    const userId = ctx?.context?.userId?.toString();
+    const access_token = ctx?.context?.["github"].access_token;
     return makeGitHubRequest(
       `/repos/${args.owner}/${args.repo}/issues`,
       "POST",
       args,
-      userId
+      access_token
     );
   },
 });
@@ -246,12 +258,12 @@ export const updateIssue = tool({
     { owner, repo, issue_number, ...rest },
     ctx?: RunContext<TIntegrations>
   ) => {
-    const userId = ctx?.context?.userId?.toString();
+    const access_token = ctx?.context?.["github"].access_token;
     return makeGitHubRequest(
       `/repos/${owner}/${repo}/issues/${issue_number}`,
       "PATCH",
       rest,
-      userId
+      access_token
     );
   },
 });
@@ -269,12 +281,12 @@ export const commentOnIssue = tool({
     { owner, repo, issue_number, body },
     ctx?: RunContext<TIntegrations>
   ) => {
-    const userId = ctx?.context?.userId?.toString();
+    const access_token = ctx?.context?.["github"].access_token;
     return makeGitHubRequest(
       `/repos/${owner}/${repo}/issues/${issue_number}/comments`,
       "POST",
       { body },
-      userId
+      access_token
     );
   },
 });
@@ -291,12 +303,12 @@ export const listIssueComments = tool({
     { owner, repo, issue_number },
     ctx?: RunContext<TIntegrations>
   ) => {
-    const userId = ctx?.context?.userId?.toString();
+    const access_token = ctx?.context?.["github"].access_token;
     return makeGitHubRequest(
       `/repos/${owner}/${repo}/issues/${issue_number}/comments`,
       "GET",
       undefined,
-      userId
+      access_token
     );
   },
 });
@@ -311,12 +323,12 @@ export const listNotifications = tool({
     participating: z.boolean().default(false),
   }),
   execute: async ({ all, participating }, ctx?: RunContext<TIntegrations>) => {
-    const userId = ctx?.context?.userId?.toString();
+    const access_token = ctx?.context?.["github"].access_token;
     return makeGitHubRequest(
       `/notifications?all=${all}&participating=${participating}`,
       "GET",
       undefined,
-      userId
+      access_token
     );
   },
 });
@@ -326,7 +338,7 @@ export const markAllNotificationsRead = tool({
   description: "Mark all GitHub notifications as read",
   parameters: z.object({}),
   execute: async (_, ctx?: RunContext<TIntegrations>) => {
-    const userId = ctx?.context?.userId?.toString();
-    return makeGitHubRequest(`/notifications`, "PUT", undefined, userId);
+    const access_token = ctx?.context?.["github"].access_token;
+    return makeGitHubRequest(`/notifications`, "PUT", undefined, access_token);
   },
 });

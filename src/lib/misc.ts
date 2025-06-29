@@ -29,18 +29,8 @@ export async function getNotionClient(userId: string) {
   return new NotionClient({ auth: integration.access_token! });
 }
 
-export async function getLinearClient(userId: string) {
-  if (!userId) {
-    throw new Error("User ID is required");
-  }
-
-  const integration = await getIntegration(userId, "linear");
-
-  if (!integration) {
-    throw new Error("Linear integration not found");
-  }
-
-  return new LinearClient({ apiKey: integration.access_token! });
+export async function getLinearClient(access_token: string) {
+  return new LinearClient({ apiKey: access_token });
 }
 
 export function getDayBoundsInUTC(date: Date, timeZone: string) {

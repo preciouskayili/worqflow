@@ -3,12 +3,7 @@ import { z } from "zod";
 import { getGmailService } from "../../lib/googleapis";
 import { RunContext } from "@openai/agents";
 import { encode } from "../../lib/misc";
-
-type UserInfo = {
-  access_token: string;
-  refresh_token: string;
-  expires_at?: string;
-};
+import { TIntegrations } from "../../../types/integrations";
 
 export const sendEmail = tool({
   name: "send_email",
@@ -18,8 +13,13 @@ export const sendEmail = tool({
     subject: z.string().describe("Subject of the email"),
     message: z.string().describe("Plain text content of the email"),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
-    const service = await getGmailService(runContext?.context!);
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getGmailService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
 
     const raw = Buffer.from(
       `To: ${args.to}\r\n` +
@@ -46,8 +46,13 @@ export const listEmails = tool({
       .describe("Search query (e.g., 'from:someone@example.com')"),
     maxResults: z.number().min(1).max(20).default(5),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
-    const service = await getGmailService(runContext?.context!);
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getGmailService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
 
     const res = await service.users.messages.list({
       userId: "me",
@@ -83,8 +88,13 @@ export const readEmail = tool({
   parameters: z.object({
     messageId: z.string().describe("ID of the email to read"),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
-    const service = await getGmailService(runContext?.context!);
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getGmailService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
 
     const res = await service.users.messages.get({
       userId: "me",
@@ -107,8 +117,13 @@ export const createDraft = tool({
     subject: z.string(),
     message: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
-    const service = await getGmailService(runContext?.context!);
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getGmailService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
 
     const raw = Buffer.from(
       `To: ${args.to}\r\n` +
@@ -133,8 +148,13 @@ export const listLabels = tool({
   name: "list_labels",
   description: "Lists all labels in the user's Gmail account",
   parameters: z.object({}),
-  async execute(_, runContext?: RunContext<UserInfo>) {
-    const service = await getGmailService(runContext?.context!);
+  async execute(_, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getGmailService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
 
     const res = await service.users.labels.list({
       userId: "me",
@@ -151,8 +171,13 @@ export const addLabelToEmail = tool({
     messageId: z.string(),
     labelId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
-    const service = await getGmailService(runContext?.context!);
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getGmailService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
 
     const res = await service.users.messages.modify({
       userId: "me",
@@ -172,8 +197,13 @@ export const markAsRead = tool({
   parameters: z.object({
     messageId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
-    const service = await getGmailService(runContext?.context!);
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getGmailService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
     const res = await service.users.messages.modify({
       userId: "me",
       id: args.messageId,
@@ -191,8 +221,13 @@ export const archiveEmail = tool({
   parameters: z.object({
     messageId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
-    const service = await getGmailService(runContext?.context!);
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getGmailService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
     const res = await service.users.messages.modify({
       userId: "me",
       id: args.messageId,
@@ -211,8 +246,13 @@ export const searchEmails = tool({
     query: z.string().describe("Search string like 'from:boss subject:report'"),
     maxResults: z.number().min(1).max(20).default(5),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
-    const service = await getGmailService(runContext?.context!);
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getGmailService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
 
     const res = await service.users.messages.list({
       userId: "me",
@@ -250,8 +290,13 @@ export const listEmailsByDate = tool({
     endDate: z.string().describe("End date (YYYY-MM-DD)"),
     maxResults: z.number().min(1).max(50).default(10),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
-    const service = await getGmailService(runContext?.context!);
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getGmailService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
 
     const query = `after:${args.startDate} before:${args.endDate}`;
     const res = await service.users.messages.list({
@@ -270,8 +315,13 @@ export const getEmailById = tool({
   parameters: z.object({
     messageId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
-    const service = await getGmailService(runContext?.context!);
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getGmailService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
 
     const res = await service.users.messages.get({
       userId: "me",
@@ -289,8 +339,13 @@ export const getThreadById = tool({
   parameters: z.object({
     threadId: z.string(),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
-    const service = await getGmailService(runContext?.context!);
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getGmailService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
     const thread = await service.users.threads.get({
       userId: "me",
       id: args.threadId,
@@ -306,8 +361,13 @@ export const listThreads = tool({
   parameters: z.object({
     maxResults: z.number().min(1).max(50).default(10),
   }),
-  async execute(args, runContext?: RunContext<UserInfo>) {
-    const service = await getGmailService(runContext?.context!);
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getGmailService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
     const res = await service.users.threads.list({
       userId: "me",
       maxResults: args.maxResults,
@@ -323,8 +383,13 @@ export const markAsUnread = tool({
   parameters: z.object({
     messageId: z.string(),
   }),
-  async execute({ messageId }, runContext?: RunContext<UserInfo>) {
-    const service = await getGmailService(runContext?.context!);
+  async execute({ messageId }, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getGmailService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
     await service.users.messages.modify({
       userId: "me",
       id: messageId,
@@ -342,8 +407,13 @@ export const trashEmail = tool({
   parameters: z.object({
     messageId: z.string(),
   }),
-  async execute({ messageId }, runContext?: RunContext<UserInfo>) {
-    const service = await getGmailService(runContext?.context!);
+  async execute({ messageId }, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getGmailService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
     await service.users.messages.trash({
       userId: "me",
       id: messageId,
@@ -358,8 +428,13 @@ export const untrashEmail = tool({
   parameters: z.object({
     messageId: z.string(),
   }),
-  async execute({ messageId }, runContext?: RunContext<UserInfo>) {
-    const service = await getGmailService(runContext?.context!);
+  async execute({ messageId }, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getGmailService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
     await service.users.messages.untrash({
       userId: "me",
       id: messageId,
@@ -372,8 +447,13 @@ export const getLabels = tool({
   name: "get_labels",
   description: "Fetches all labels in the user's Gmail account",
   parameters: z.object({}),
-  async execute(_, runContext?: RunContext<UserInfo>) {
-    const service = await getGmailService(runContext?.context!);
+  async execute(_, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getGmailService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
     const res = await service.users.labels.list({ userId: "me" });
     return res.data.labels || [];
   },
@@ -385,8 +465,13 @@ export const createLabel = tool({
   parameters: z.object({
     labelName: z.string(),
   }),
-  async execute({ labelName }, runContext?: RunContext<UserInfo>) {
-    const service = await getGmailService(runContext?.context!);
+  async execute({ labelName }, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getGmailService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
     const res = await service.users.labels.create({
       userId: "me",
       requestBody: {
@@ -411,9 +496,14 @@ export const replyToEmail = tool({
   }),
   async execute(
     { threadId, to, subject, body, messageId },
-    runContext?: RunContext<UserInfo>
+    runContext?: RunContext<TIntegrations>
   ) {
-    const service = await getGmailService(runContext?.context!);
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getGmailService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
 
     const rawMessage = encode({
       to,
@@ -444,9 +534,14 @@ export const modifyEmailLabels = tool({
   }),
   async execute(
     { messageId, addLabelIds, removeLabelIds },
-    runContext?: RunContext<UserInfo>
+    runContext?: RunContext<TIntegrations>
   ) {
-    const service = await getGmailService(runContext?.context!);
+    const googleIntegration = runContext?.context?.["google"];
+    const service = await getGmailService({
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
+    });
     await service.users.messages.modify({
       userId: "me",
       id: messageId,

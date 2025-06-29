@@ -1,30 +1,33 @@
 import { Response } from "express";
-import { getFigmaOAuthUrl, getFigmaToken } from "../../lib/figmaapis";
+import { getLinearOAuthUrl, getLinearToken } from "../../lib/linearapis";
 import { IntegrationModel } from "../../models/Integrations";
 import { AuthRequest } from "../../middleware/auth";
-import { FIGMA_SCOPES } from "../../config/figma_scopes";
+import { LINEAR_SCOPES } from "../../config/linear_scopes";
 
 // Step 1: build consent-screen URL
-export async function getFigmaOAuthUrlController(
+export async function getLinearOAuthUrlController(
   req: AuthRequest,
   res: Response
 ) {
   const userId = req.user._id;
   const exists = await IntegrationModel.exists({
     user_id: userId,
-    name: "figma",
+    name: "linear",
   });
 
   if (exists) {
-    res.status(409).json({ message: "Figma already connected" });
+    res.status(409).json({ message: "Linear already connected" });
   } else {
-    const url = await getFigmaOAuthUrl(FIGMA_SCOPES);
+    const url = await getLinearOAuthUrl(LINEAR_SCOPES);
     res.json({ url });
   }
 }
 
-// Step 2: handle Figma's redirect
-export async function figmaCallbackController(req: AuthRequest, res: Response) {
+// Step 2: handle Linear's redirect
+export async function linearCallbackController(
+  req: AuthRequest,
+  res: Response
+) {
   const { code } = req.query as Record<string, string>;
   if (!code) {
     res.status(400).json({ message: "Missing code" });
@@ -33,22 +36,22 @@ export async function figmaCallbackController(req: AuthRequest, res: Response) {
 
     const alreadyExists = await IntegrationModel.exists({
       user_id: userId,
-      name: "figma",
+      name: "linear",
     });
 
     if (alreadyExists) {
-      res.status(409).json({ message: "Figma Account already connected" });
+      res.status(409).json({ message: "Linear Account already connected" });
     } else {
-      const tokens = await getFigmaToken(code!);
+      const tokens = await getLinearToken(code!);
 
       await IntegrationModel.create({
         user_id: userId,
-        name: "figma",
+        name: "linear",
         access_token: tokens.access_token,
         scope: tokens.scope,
       });
 
-      res.status(200).json({ message: "Figma connected" });
+      res.status(200).json({ message: "Linear connected" });
     }
   }
 }

@@ -92,7 +92,7 @@ export async function messageEvents(req: AuthRequest, res: Response) {
     userId: req.user._id,
     userEmail: req.user.email,
     userName: req.user.name,
-    integrations,
+    integrations: integrationsMap,
   };
 
   const timeout = setTimeout(() => {
