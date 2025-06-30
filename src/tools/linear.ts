@@ -7,8 +7,8 @@ export const listLinearIssues = tool({
   name: "list_linear_issues",
   description: "List Linear issues assigned to the user",
   parameters: z.object({
-    status: z.string().optional(),
-    teamId: z.string().optional(),
+    status: z.string().optional().nullable(),
+    teamId: z.string().optional().nullable(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const linear = await getLinearClient(
@@ -31,7 +31,7 @@ export const createLinearIssue = tool({
   parameters: z.object({
     teamId: z.string(),
     title: z.string(),
-    description: z.string().optional(),
+    description: z.string().optional().nullable(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const linear = await getLinearClient(

@@ -76,7 +76,7 @@ export const exportFigmaImages = tool({
   parameters: z.object({
     fileId: z.string(),
     nodeIds: z.array(z.string()),
-    scale: z.number().optional(),
+    scale: z.number().optional().nullable(),
   }),
   async execute(
     { fileId, nodeIds, scale },
