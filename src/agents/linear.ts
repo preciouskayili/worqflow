@@ -19,6 +19,12 @@ const {
   listLinearIssues,
   listLinearTeams,
   updateLinearIssueStatus,
+  createLabel,
+  createLinearProject,
+  getLabels,
+  getLinearStatusById,
+  getLinearStatuses,
+  getMembers,
 } = linearTools;
 
 export const linearAgent = new Agent({
@@ -41,5 +47,11 @@ export const linearAgent = new Agent({
     listLinearIssues,
     listLinearTeams,
     updateLinearIssueStatus,
+    createLabel,
+    createLinearProject,
+    getLabels,
+    getLinearStatusById,
+    getLinearStatuses,
+    getMembers,
   ],
 });

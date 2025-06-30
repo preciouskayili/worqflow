@@ -105,6 +105,21 @@ export const getLinearUserByEmail = tool({
   },
 });
 
+export const getMembers = tool({
+  name: "get_linear_team_members",
+  description: "Get all the members of a Linear team",
+  parameters: z.object({
+    teamId: z.string(),
+  }),
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const linear = await getLinearClient(
+      runContext?.context?.["linear"].access_token!
+    );
+    const res = await linear.teamMemberships(args.teamId);
+    return res.nodes.map((member) => member.user);
+  },
+});
+
 export const getLinearUserIssues = tool({
   name: "get_linear_user_issues",
   description: "Get all the issues assigned to a Linear user",
@@ -290,5 +305,135 @@ export const assignLinearIssue = tool({
       assigneeId: args.assigneeId,
     });
     return res.issue;
+  },
+});
+
+export const createLinearProject = tool({
+  name: "create_linear_project",
+  description: "Create a new project in Linear",
+  parameters: z.object({
+    name: z.string(),
+    teamId: z.string(),
+    description: z.string().optional().nullable(),
+    memberIds: z.array(z.string()).optional().nullable(),
+    teamMemberIds: z.array(z.string()).optional().nullable(),
+    content: z.string().optional().nullable(),
+    priority: z
+      .number()
+      .optional()
+      .nullable()
+      .describe(
+        "Priority of the project on a scale of 0(No priority), 1(Urgent), 2(High), 3(Medium), 4(Low)"
+      ),
+    leadId: z
+      .string()
+      .optional()
+      .nullable()
+      .describe("Id of the lead of the project or 0"),
+    statusId: z
+      .string()
+      .optional()
+      .nullable()
+      .describe(
+        "Id of the status of the project. 1(Backlog), 2(Planned), 3(In Progress), 4(Completed), 5(Canceled)"
+      ),
+    labelIds: z.array(z.string()).optional().nullable(),
+    startDate: z.string().optional().nullable(),
+    dueDate: z.string().optional().nullable(),
+  }),
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const linear = await getLinearClient(
+      runContext?.context?.["linear"].access_token!
+    );
+    const res = await linear.createProject({
+      name: args.name,
+      teamIds: [args.teamId],
+      description: args.description,
+      memberIds: args.memberIds,
+      content: args.content,
+      priority: args.priority,
+      leadId: args.leadId,
+      labelIds: args.labelIds,
+      startDate: args.startDate,
+      targetDate: args.dueDate,
+      statusId: args.statusId,
+    });
+
+    return res.project;
+  },
+});
+
+export const getLinearStatuses = tool({
+  name: "get_linear_statuses",
+  description: "Get all the statuses in a Linear team",
+  parameters: z.object({
+    teamId: z.string(),
+  }),
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const linear = await getLinearClient(
+      runContext?.context?.["linear"].access_token!
+    );
+    const res = await linear.customerStatuses();
+    return res.nodes;
+  },
+});
+
+export const getLinearStatusById = tool({
+  name: "get_linear_status_by_id",
+  description: "Get a Linear status by id",
+  parameters: z.object({
+    id: z.string(),
+  }),
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const linear = await getLinearClient(
+      runContext?.context?.["linear"].access_token!
+    );
+    const res = await linear.customerStatus(args.id);
+    return res;
+  },
+});
+
+export const getLabels = tool({
+  name: "get_linear_labels",
+  description: "Get all the labels in a Linear team",
+  parameters: z.object({
+    teamId: z.string(),
+  }),
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const linear = await getLinearClient(
+      runContext?.context?.["linear"].access_token!
+    );
+
+    const res = await linear.issueLabels({
+      filter: {
+        team: { id: { eq: args.teamId } },
+      },
+    });
+    return res.nodes;
+  },
+});
+
+export const createLabel = tool({
+  name: "create_linear_label",
+  description: "Create a new label in a Linear team",
+  parameters: z.object({
+    teamId: z.string(),
+    name: z.string(),
+    color: z.string(),
+  }),
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const linear = await getLinearClient(
+      runContext?.context?.["linear"].access_token!
+    );
+
+    const res = await linear.createIssueLabel({
+      teamId: args.teamId,
+      name: args.name,
+      color: args.color,
+    });
+    return {
+      id: res.issueLabelId,
+      name: res.issueLabel,
+    };
   },
 });
