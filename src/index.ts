@@ -87,5 +87,5 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 const APP_PORT = env.APP_PORT || 8000;
 
 app.listen(APP_PORT, () => {
-  logger.info(`Express server listening on port ${APP_PORT}`);
+  logger.info(`Express server listening on port http://localhost:${APP_PORT}`);
 });
