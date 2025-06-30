@@ -340,6 +340,7 @@ export const createLinearProject = tool({
     labelIds: z.array(z.string()).optional().nullable(),
     startDate: z.string().optional().nullable(),
     dueDate: z.string().optional().nullable(),
+    color: z.string().optional().nullable(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const linear = await getLinearClient(
@@ -357,6 +358,7 @@ export const createLinearProject = tool({
       startDate: args.startDate,
       targetDate: args.dueDate,
       statusId: args.statusId,
+      color: args.color,
     });
 
     return res.project;
