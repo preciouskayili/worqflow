@@ -92,7 +92,7 @@ export async function messageEvents(req: AuthRequest, res: Response) {
     userId: req.user._id,
     userEmail: req.user.email,
     userName: req.user.name,
-    integrations: integrationsMap,
+    ...integrationsMap,
   };
 
   const timeout = setTimeout(() => {
@@ -103,6 +103,7 @@ export async function messageEvents(req: AuthRequest, res: Response) {
   const heartbeat = heartbeatStream(res);
 
   try {
+    console.log(runContext);
     const result = await run(
       mainAgent,
       `User: \n${req.user.name ?? "[Not Provided]"}\n${
@@ -112,9 +113,6 @@ export async function messageEvents(req: AuthRequest, res: Response) {
     );
 
     for await (const event of result) {
-      if (event.type === "raw_model_stream_event") {
-        res.write(`event: message\ndata: ${JSON.stringify(event.data)}\n\n`);
-      }
       if (event.type === "agent_updated_stream_event") {
         res.write(
           `event: message\ndata: {"type": "${event.type}", "agent": "${event.agent.name}"}\n\n`
