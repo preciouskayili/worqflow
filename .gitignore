@@ -45,3 +45,4 @@ jspm_packages
 *.sw?
 
 # End of https://www.toptal.com/developers/gitignore/api/node
+config/credentials.json
