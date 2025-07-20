@@ -34,9 +34,11 @@
     "morgan": "^1.10.0",
     "openai": "^5.2.0",
     "resend": "^4.5.1",
+    "swagger-ui-express": "^5.0.1",
     "typescript": "^5.8.3",
     "uuid": "^11.1.0",
     "winston": "^3.17.0",
+    "yamljs": "^0.3.0",
     "zod": "^3.24.4"
   },
   "devDependencies": {
@@ -46,5 +48,13 @@
     "@types/morgan": "^1.9.9",
     "@types/node": "^22.15.18",
     "tsx": "^4.19.4"
+  },
+  "pnpm": {
+    "ignoredBuiltDependencies": [
+      "@scarf/scarf"
+    ],
+    "onlyBuiltDependencies": [
+      "@scarf/scarf"
+    ]
   }
 }

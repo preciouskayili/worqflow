@@ -14,6 +14,8 @@ import dotenv from "dotenv";
 import { logger } from "./lib/logger";
 import { connectDB } from "./lib/db";
 import { env } from "./config/env";
+import swaggerUi from "swagger-ui-express";
+import YAML from "yamljs";
 
 dotenv.config();
 
@@ -69,6 +71,10 @@ const apiLimiter = rateLimit({
 // Apply rate limiting and API routes
 app.use(`/${apiVersion}/`, apiLimiter, router);
 
+// Swagger Documentation
+const swaggerDocument = YAML.load("./swagger.yaml");
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
 // 404 Handler
 app.use((_req: Request, res: Response, _next: NextFunction) => {
   res.status(404).json({ message: "Endpoint Not Found" });
@@ -88,4 +94,5 @@ const APP_PORT = env.APP_PORT || 8000;
 
 app.listen(APP_PORT, () => {
   logger.info(`Express server listening on port http://localhost:${APP_PORT}`);
+  logger.info(`Swagger docs at http://localhost:${APP_PORT}/docs`);
 });

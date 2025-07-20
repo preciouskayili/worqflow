@@ -1,0 +1,564 @@
+openapi: 3.0.3
+info:
+  title: WorqAI API
+  version: 1.0.0
+  description: |
+    WorqAI API provides unified access to productivity integrations (Google, Slack, GitHub, Figma, Linear, etc.), AI-powered chat/task automation, and real-time event streaming.
+
+    **Authentication:**
+    - Magic link (passwordless)
+    - JWT access/refresh tokens
+    - OAuth for integrations
+servers:
+  - url: http://localhost:8000
+    description: Local development
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      properties:
+        email:
+          type: string
+        name:
+          type: string
+        googleId:
+          type: string
+        refreshToken:
+          type: string
+        magicLinkToken:
+          type: string
+        magicLinkExpires:
+          type: string
+          format: date-time
+        timeZone:
+          type: string
+        workDayStart:
+          type: string
+          format: date-time
+        workDayEnd:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Integration:
+      type: object
+      properties:
+        name:
+          type: string
+        user_id:
+          type: string
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        scope:
+          type: object
+    Thread:
+      type: object
+      properties:
+        lastMessageAt:
+          type: string
+          format: date-time
+        userId:
+          type: string
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ChatMessage:
+      type: object
+      properties:
+        thread:
+          type: string
+        user:
+          type: string
+        role:
+          type: string
+          enum: [user, agent]
+        content:
+          type: string
+        status:
+          type: string
+          enum: [pending, completed, failed]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Memory:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [episodic, factual, semantic]
+        content:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+paths:
+  /auth/magic-link:
+    post:
+      summary: Request magic login link
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                name:
+                  type: string
+              required: [email]
+      responses:
+        "200":
+          description: Magic link sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "400":
+          description: Invalid input
+        "500":
+          description: Server error
+  /auth/magic-link/verify:
+    post:
+      summary: Verify magic link token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+              required: [token]
+      responses:
+        "200":
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  refreshToken:
+                    type: string
+                  user:
+                    $ref: "#/components/schemas/User"
+        "400":
+          description: Missing or invalid token
+        "401":
+          description: Invalid or expired magic link
+  /auth/refresh-token:
+    post:
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+              required: [refreshToken]
+      responses:
+        "200":
+          description: New access token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+        "400":
+          description: Missing refresh token
+        "401":
+          description: Invalid or expired refresh token
+  /auth/me:
+    get:
+      summary: Get current user info
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: User info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+
+  /integrations:
+    get:
+      summary: List user integrations
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: name
+          schema:
+            type: string
+          description: Filter by integration name
+      responses:
+        "200":
+          description: Integrations
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: "#/components/schemas/Integration"
+        "401":
+          description: Unauthorized
+  /integrations/{name}:
+    put:
+      summary: Update integration token
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: name
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                access_token:
+                  type: string
+                refresh_token:
+                  type: string
+                expires_at:
+                  type: string
+                  format: date-time
+      responses:
+        "200":
+          description: Updated integration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Integration"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Integration not found
+
+  /oauth/google:
+    get:
+      summary: Get Google OAuth URL
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Consent URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+        "409":
+          description: Already connected
+  /oauth/google/callback:
+    get:
+      summary: Google OAuth callback
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: code
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Connected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "400":
+          description: Missing code
+        "409":
+          description: Already connected
+
+  /oauth/slack:
+    get:
+      summary: Get Slack OAuth URL
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Consent URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+        "409":
+          description: Already connected
+  /oauth/slack/callback:
+    get:
+      summary: Slack OAuth callback
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: code
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Connected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "400":
+          description: Missing code
+        "409":
+          description: Already connected
+
+  /oauth/github:
+    get:
+      summary: Get GitHub OAuth URL
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Consent URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+        "409":
+          description: Already connected
+  /oauth/github/callback:
+    get:
+      summary: GitHub OAuth callback
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: code
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Connected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "400":
+          description: Missing code
+        "409":
+          description: Already connected
+
+  /oauth/linear:
+    get:
+      summary: Get Linear OAuth URL
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Consent URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+        "409":
+          description: Already connected
+  /oauth/linear/callback:
+    get:
+      summary: Linear OAuth callback
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: code
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Connected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "400":
+          description: Missing code
+        "409":
+          description: Already connected
+
+  /oauth/figma:
+    get:
+      summary: Get Figma OAuth URL
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Consent URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+        "409":
+          description: Already connected
+  /oauth/figma/callback:
+    get:
+      summary: Figma OAuth callback
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: code
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Connected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "400":
+          description: Missing code
+        "409":
+          description: Already connected
+
+  /ai/:
+    post:
+      summary: Create a new AI task (chat message)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                task:
+                  type: string
+                threadId:
+                  type: string
+      responses:
+        "201":
+          description: Task recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      threadId:
+                        type: string
+                      messageId:
+                        type: string
+        "400":
+          description: Invalid input
+        "401":
+          description: Unauthorized
+
+  /streams/messages/{threadId}/{messageId}:
+    get:
+      summary: Stream AI agent events for a chat message (SSE)
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: threadId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: messageId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: SSE stream
+        "401":
+          description: Unauthorized

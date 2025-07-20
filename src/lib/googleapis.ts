@@ -75,7 +75,6 @@ export async function getCalendarService(integration: {
   expires_at?: string;
 }) {
   const client = await getGoogleService(integration);
-  console.log("Getting calendar service", client);
   return google.calendar({ version: "v3", auth: client });
 }
 
@@ -85,7 +84,6 @@ export async function getGmailService(integration: {
   expires_at?: string;
 }) {
   const client = await getGoogleService(integration);
-  console.log("Getting gmail service", client);
   return google.gmail({ version: "v1", auth: client });
 }
 
@@ -95,7 +93,6 @@ export async function getDriveService(integration: {
   expires_at?: string;
 }) {
   const client = await getGoogleService(integration);
-  console.log("Getting drive service");
   return google.drive({ version: "v3", auth: client });
 }
 
@@ -104,9 +101,7 @@ export async function getDocsService(integration: {
   refresh_token: string;
   expires_at?: string;
 }) {
-  console.log("Getting docs service");
   const client = await getGoogleService(integration);
-  console.log("Getting docs service", client);
   return google.docs({ version: "v1", auth: client });
 }
 

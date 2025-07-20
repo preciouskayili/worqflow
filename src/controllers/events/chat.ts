@@ -103,7 +103,6 @@ export async function messageEvents(req: AuthRequest, res: Response) {
   const heartbeat = heartbeatStream(res);
 
   try {
-    console.log(runContext);
     const result = await run(
       mainAgent,
       `User: \n${req.user.name ?? "[Not Provided]"}\n${

@@ -47,15 +47,12 @@ export const listEmails = tool({
     maxResults: z.number().min(1).max(20).default(5),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    console.log("Listing emails started", args, runContext);
     const googleIntegration = runContext?.context?.["google"];
     const service = await getGmailService({
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    console.log("Listing emails", googleIntegration, service);
 
     const res = await service.users.messages.list({
       userId: "me",
@@ -104,7 +101,6 @@ export const readEmail = tool({
       id: args.messageId,
       format: "full",
     });
-    console.log("Reading email", res, googleIntegration, service);
     return {
       id: res.data.id,
       snippet: res.data.snippet,
@@ -128,7 +124,6 @@ export const createDraft = tool({
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-    console.log("Creating draft", googleIntegration, service);
 
     const raw = Buffer.from(
       `To: ${args.to}\r\n` +
@@ -161,8 +156,6 @@ export const listLabels = tool({
       expires_at: googleIntegration?.expires_at,
     });
 
-    console.log("Listing labels", googleIntegration, service);
-
     const res = await service.users.labels.list({
       userId: "me",
     });
@@ -185,8 +178,6 @@ export const addLabelToEmail = tool({
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    console.log("Adding label to email", googleIntegration, service);
 
     const res = await service.users.messages.modify({
       userId: "me",
@@ -213,7 +204,6 @@ export const markAsRead = tool({
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-    console.log("Marking as read", googleIntegration, service);
     const res = await service.users.messages.modify({
       userId: "me",
       id: args.messageId,
@@ -238,7 +228,6 @@ export const archiveEmail = tool({
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-    console.log("Archiving email", googleIntegration, service);
     const res = await service.users.messages.modify({
       userId: "me",
       id: args.messageId,
@@ -264,8 +253,6 @@ export const searchEmails = tool({
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    console.log("Searching emails", googleIntegration, service);
 
     const res = await service.users.messages.list({
       userId: "me",
@@ -311,8 +298,6 @@ export const listEmailsByDate = tool({
       expires_at: googleIntegration?.expires_at,
     });
 
-    console.log("Listing emails by date", googleIntegration, service);
-
     const query = `after:${args.startDate} before:${args.endDate}`;
     const res = await service.users.messages.list({
       userId: "me",
@@ -338,8 +323,6 @@ export const getEmailById = tool({
       expires_at: googleIntegration?.expires_at,
     });
 
-    console.log("Getting email by id", googleIntegration, service);
-
     const res = await service.users.messages.get({
       userId: "me",
       id: args.messageId,
@@ -364,8 +347,6 @@ export const getThreadById = tool({
       expires_at: googleIntegration?.expires_at,
     });
 
-    console.log("Getting thread by id", googleIntegration, service);
-
     const thread = await service.users.threads.get({
       userId: "me",
       id: args.threadId,
@@ -389,8 +370,6 @@ export const listThreads = tool({
       expires_at: googleIntegration?.expires_at,
     });
 
-    console.log("Listing threads", googleIntegration, service);
-
     const res = await service.users.threads.list({
       userId: "me",
       maxResults: args.maxResults,
@@ -413,8 +392,6 @@ export const markAsUnread = tool({
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    console.log("Marking as unread", googleIntegration, service);
 
     await service.users.messages.modify({
       userId: "me",
@@ -441,8 +418,6 @@ export const trashEmail = tool({
       expires_at: googleIntegration?.expires_at,
     });
 
-    console.log("Trashing email", googleIntegration, service);
-
     await service.users.messages.trash({
       userId: "me",
       id: messageId,
@@ -465,8 +440,6 @@ export const untrashEmail = tool({
       expires_at: googleIntegration?.expires_at,
     });
 
-    console.log("Untrashing email", googleIntegration, service);
-
     await service.users.messages.untrash({
       userId: "me",
       id: messageId,
@@ -487,8 +460,6 @@ export const getLabels = tool({
       expires_at: googleIntegration?.expires_at,
     });
 
-    console.log("Getting labels", googleIntegration, service);
-
     const res = await service.users.labels.list({ userId: "me" });
     return res.data.labels || [];
   },
@@ -507,8 +478,6 @@ export const createLabel = tool({
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    console.log("Creating label", googleIntegration, service);
 
     const res = await service.users.labels.create({
       userId: "me",
@@ -542,8 +511,6 @@ export const replyToEmail = tool({
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    console.log("Replying to email", googleIntegration, service);
 
     const rawMessage = encode({
       to,
@@ -582,8 +549,6 @@ export const modifyEmailLabels = tool({
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    console.log("Modifying email labels", googleIntegration, service);
 
     await service.users.messages.modify({
       userId: "me",
