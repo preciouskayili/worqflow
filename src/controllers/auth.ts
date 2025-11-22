@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { env } from "../config/env";
 import { Resend } from "resend";
+import { logger } from "../lib/logger";
 
 const resend = new Resend(env.RESEND_API_KEY);
 
@@ -54,17 +55,21 @@ export async function requestMagicLinkController(req: Request, res: Response) {
       // Send magic link email
       const magicLinkUrl = `${
         env.FRONTEND_URL || "http://localhost:3000"
-      }/magic-link/verify?token=${magicLinkToken}`;
+      }/auth/callback?token=${magicLinkToken}`;
 
       try {
-        await resend.emails.send({
+        const result = await resend.emails.send({
           from: env.RESEND_FROM_EMAIL,
           to: email,
           subject: "Your Magic Login Link",
           html: `<p>Click <a href="${magicLinkUrl}">here</a> to log in. This link expires in 15 minutes.</p>`,
         });
 
-        res.status(200).json({ message: "Magic link sent if email exists." });
+        if (result.error) {
+          res.status(500).json({ message: "Unable to send magic link" });
+        } else {
+          res.status(200).json({ message: "Magic link sent if email exists." });
+        }
       } catch (err) {
         res.status(500).json({ message: "Unable to send magic link" });
       }
