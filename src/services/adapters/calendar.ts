@@ -2,13 +2,15 @@ import { getCalendarService } from "../../lib/googleapis";
 import { getDayBoundsInUTC, formatEvent } from "../../lib/misc";
 import { calendar_v3 } from "googleapis";
 
+type Integration = {
+  access_token: string;
+  refresh_token: string;
+  expires_at?: string;
+};
+
 export const createCalendarList = async (
   args: { calendarName: string; attendees?: string[] | null },
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getCalendarService(googleIntegration);
 
@@ -21,11 +23,7 @@ export const createCalendarList = async (
 
 export const listCalendarList = async (
   args: { maxCapacity: number; userId: string },
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getCalendarService(googleIntegration);
 
@@ -43,11 +41,7 @@ export const listCalendarList = async (
 
 export const listCalendarEvents = async (
   args: { calendarId: string; maxCapacity: number; userId: string },
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getCalendarService(googleIntegration);
 
@@ -62,11 +56,7 @@ export const listCalendarEvents = async (
 
 export const listEventsForDate = async (
   args: { calendarId: string; userId: string; date: string },
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getCalendarService(googleIntegration);
 
@@ -90,11 +80,7 @@ export const listEventsInRange = async (
     startDate: string;
     endDate: string;
   },
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getCalendarService(googleIntegration);
 
@@ -103,10 +89,7 @@ export const listEventsInRange = async (
     "Africa/Lagos"
   );
 
-  const { timeMax } = getDayBoundsInUTC(
-    new Date(args.endDate),
-    "Africa/Lagos"
-  );
+  const { timeMax } = getDayBoundsInUTC(new Date(args.endDate), "Africa/Lagos");
 
   const res = await service.events.list({
     calendarId: args.calendarId,
@@ -120,11 +103,7 @@ export const listEventsInRange = async (
 
 export const listCurrentCalendarEvents = async (
   args: { calendarId: string; maxCapacity: number; userId: string },
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getCalendarService(googleIntegration);
 
@@ -151,11 +130,7 @@ export const listCurrentCalendarEvents = async (
 
 export const listTodaysEvents = async (
   args: { calendarId: string; userId: string },
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getCalendarService(googleIntegration);
 
@@ -180,11 +155,7 @@ export const insertCalendarEvent = async (
     description?: string | null;
     attendees?: string[] | null;
   },
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getCalendarService(googleIntegration);
 
@@ -199,8 +170,7 @@ export const insertCalendarEvent = async (
       dateTime: args.endTime,
       timeZone: "Africa/Lagos",
     },
-    attendees:
-      args.attendees?.map((email: string) => ({ email })) || undefined,
+    attendees: args.attendees?.map((email: string) => ({ email })) || undefined,
   };
 
   const res = await service.events.insert({
@@ -220,11 +190,7 @@ export const updateCalendarEvent = async (
     endTime?: string | null;
     description?: string | null;
   },
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getCalendarService(googleIntegration);
 
@@ -255,11 +221,7 @@ export const updateCalendarEvent = async (
 
 export const deleteCalendarEvent = async (
   args: { calendarId: string; eventId: string },
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getCalendarService(googleIntegration);
 
@@ -270,4 +232,3 @@ export const deleteCalendarEvent = async (
 
   return { success: true };
 };
-

@@ -1,13 +1,15 @@
 import { getGmailService } from "../../lib/googleapis";
 import { encode } from "../../lib/misc";
 
+type Integration = {
+  access_token: string;
+  refresh_token: string;
+  expires_at?: string;
+};
+
 export const sendEmail = async (
   args: { to: string; subject: string; message: string },
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getGmailService(googleIntegration);
 
@@ -27,11 +29,7 @@ export const sendEmail = async (
 
 export const listEmails = async (
   args: { query: string; maxResults: number },
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getGmailService(googleIntegration);
 
@@ -64,11 +62,7 @@ export const listEmails = async (
 
 export const readEmail = async (
   messageId: string,
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getGmailService(googleIntegration);
 
@@ -86,11 +80,7 @@ export const readEmail = async (
 
 export const createDraft = async (
   args: { to: string; subject: string; message: string },
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getGmailService(googleIntegration);
 
@@ -112,11 +102,7 @@ export const createDraft = async (
   return res.data;
 };
 
-export const listLabels = async (googleIntegration: {
-  access_token: string;
-  refresh_token?: string;
-  expires_at?: string;
-}) => {
+export const listLabels = async (googleIntegration: Integration) => {
   const service = await getGmailService(googleIntegration);
 
   const res = await service.users.labels.list({
@@ -129,11 +115,7 @@ export const listLabels = async (googleIntegration: {
 export const addLabelToEmail = async (
   messageId: string,
   labelId: string,
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getGmailService(googleIntegration);
 
@@ -150,11 +132,7 @@ export const addLabelToEmail = async (
 
 export const markAsRead = async (
   messageId: string,
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getGmailService(googleIntegration);
   const res = await service.users.messages.modify({
@@ -169,11 +147,7 @@ export const markAsRead = async (
 
 export const archiveEmail = async (
   messageId: string,
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getGmailService(googleIntegration);
   const res = await service.users.messages.modify({
@@ -188,11 +162,7 @@ export const archiveEmail = async (
 
 export const searchEmails = async (
   args: { query: string; maxResults: number },
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getGmailService(googleIntegration);
 
@@ -225,11 +195,7 @@ export const searchEmails = async (
 
 export const listEmailsByDate = async (
   args: { startDate: string; endDate: string; maxResults: number },
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getGmailService(googleIntegration);
 
@@ -245,11 +211,7 @@ export const listEmailsByDate = async (
 
 export const getEmailById = async (
   messageId: string,
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getGmailService(googleIntegration);
 
@@ -264,11 +226,7 @@ export const getEmailById = async (
 
 export const getThreadById = async (
   threadId: string,
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getGmailService(googleIntegration);
 
@@ -282,11 +240,7 @@ export const getThreadById = async (
 
 export const listThreads = async (
   maxResults: number,
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getGmailService(googleIntegration);
 
@@ -300,11 +254,7 @@ export const listThreads = async (
 
 export const listUnreadEmails = async (
   maxResults: number,
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getGmailService(googleIntegration);
 
@@ -319,11 +269,7 @@ export const listUnreadEmails = async (
 
 export const markAsUnread = async (
   messageId: string,
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getGmailService(googleIntegration);
 
@@ -339,11 +285,7 @@ export const markAsUnread = async (
 
 export const trashEmail = async (
   messageId: string,
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getGmailService(googleIntegration);
 
@@ -356,11 +298,7 @@ export const trashEmail = async (
 
 export const untrashEmail = async (
   messageId: string,
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getGmailService(googleIntegration);
 
@@ -371,11 +309,7 @@ export const untrashEmail = async (
   return { success: true };
 };
 
-export const getLabels = async (googleIntegration: {
-  access_token: string;
-  refresh_token?: string;
-  expires_at?: string;
-}) => {
+export const getLabels = async (googleIntegration: Integration) => {
   const service = await getGmailService(googleIntegration);
 
   const res = await service.users.labels.list({ userId: "me" });
@@ -384,11 +318,7 @@ export const getLabels = async (googleIntegration: {
 
 export const createLabel = async (
   labelName: string,
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getGmailService(googleIntegration);
 
@@ -411,11 +341,7 @@ export const replyToEmail = async (
     body: string;
     messageId: string;
   },
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getGmailService(googleIntegration);
 
@@ -441,11 +367,7 @@ export const modifyEmailLabels = async (
   messageId: string,
   addLabelIds: string[] | null,
   removeLabelIds: string[] | null,
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const service = await getGmailService(googleIntegration);
 
@@ -459,4 +381,3 @@ export const modifyEmailLabels = async (
   });
   return { success: true };
 };
-

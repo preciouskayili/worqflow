@@ -72,9 +72,9 @@ export const getLinearUserByEmail = async (
   return res.nodes[0];
 };
 
-export const getMembers = async (teamId: string, access_token: string) => {
+export const getTeamMemberships = async (access_token: string) => {
   const linear = await getLinearClient(access_token);
-  const res = await linear.teamMemberships(teamId);
+  const res = await linear.teamMemberships();
   return res.nodes.map((member) => member.user);
 };
 
@@ -238,10 +238,7 @@ export const getLinearStatuses = async (
   return res.nodes;
 };
 
-export const getLinearStatusById = async (
-  id: string,
-  access_token: string
-) => {
+export const getLinearStatusById = async (id: string, access_token: string) => {
   const linear = await getLinearClient(access_token);
   const res = await linear.customerStatus(id);
   return res;
@@ -272,4 +269,3 @@ export const createLabel = async (
     name: res.issueLabel,
   };
 };
-

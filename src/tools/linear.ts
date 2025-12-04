@@ -67,15 +67,15 @@ export const getLinearUserByEmail = tool({
   },
 });
 
-export const getMembers = tool({
-  name: "get_linear_team_members",
+export const getTeamMemberships = tool({
+  name: "get_linear_team_memberships",
   description: "Get all the members of a Linear team",
   parameters: z.object({
     teamId: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const access_token = runContext?.context?.["linear"].access_token!;
-    return linearAdapters.getMembers(args.teamId, access_token);
+    return linearAdapters.getTeamMemberships(access_token);
   },
 });
 

@@ -1,10 +1,12 @@
 import { getDocsService, getDriveService } from "../../lib/googleapis";
 
-export const listDocs = async (googleIntegration: {
+type Integration = {
   access_token: string;
-  refresh_token?: string;
+  refresh_token: string;
   expires_at?: string;
-}) => {
+};
+
+export const listDocs = async (googleIntegration: Integration) => {
   const drive = await getDriveService(googleIntegration);
   const res = await drive.files.list({
     q: "mimeType='application/vnd.google-apps.document'",
@@ -15,11 +17,7 @@ export const listDocs = async (googleIntegration: {
 
 export const searchDocs = async (
   query: string,
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const drive = await getDriveService(googleIntegration);
   const res = await drive.files.list({
@@ -31,11 +29,7 @@ export const searchDocs = async (
 
 export const createDoc = async (
   title: string,
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const docs = await getDocsService(googleIntegration);
   const res = await docs.documents.create({
@@ -46,11 +40,7 @@ export const createDoc = async (
 
 export const deleteDoc = async (
   fileId: string,
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const drive = await getDriveService(googleIntegration);
   await drive.files.delete({ fileId: fileId });
@@ -60,11 +50,7 @@ export const deleteDoc = async (
 export const insertText = async (
   fileId: string,
   text: string,
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const docs = await getDocsService(googleIntegration);
   const res = await docs.documents.batchUpdate({
@@ -87,11 +73,7 @@ export const replaceText = async (
   fileId: string,
   searchText: string,
   replaceText: string,
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const docs = await getDocsService(googleIntegration);
   const res = await docs.documents.batchUpdate({
@@ -114,11 +96,7 @@ export const shareDoc = async (
   fileId: string,
   email: string,
   role: "reader" | "writer" | "commenter",
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const drive = await getDriveService(googleIntegration);
   const res = await drive.permissions.create({
@@ -135,11 +113,7 @@ export const shareDoc = async (
 
 export const listCollaborators = async (
   fileId: string,
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const drive = await getDriveService(googleIntegration);
   const res = await drive.permissions.list({ fileId: fileId });
@@ -148,11 +122,7 @@ export const listCollaborators = async (
 
 export const getLastEdited = async (
   fileId: string,
-  googleIntegration: {
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: string;
-  }
+  googleIntegration: Integration
 ) => {
   const drive = await getDriveService(googleIntegration);
   const res = await drive.files.get({
@@ -161,4 +131,3 @@ export const getLastEdited = async (
   });
   return res.data;
 };
-
