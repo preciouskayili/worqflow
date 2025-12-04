@@ -6,6 +6,8 @@ import { requireAuth } from "../middleware/auth";
 import taskRouter from "./task.ts";
 import eventsRouter from "./events";
 import homeRouter from "./home";
+import webhooksRouter from "./webhooks";
+import realtimeRouter from "./realtime";
 
 const router = Router();
 
@@ -18,6 +20,8 @@ router.use("/oauth", requireAuth, oauthRouter);
 router.use("/integrations", requireAuth, integrationsRouter);
 router.use("/ai", requireAuth, taskRouter);
 router.use("/home", requireAuth, homeRouter);
+router.use("/webhooks", webhooksRouter);
+router.use("/realtime", realtimeRouter);
 router.use(
   "/streams",
   requireAuth,

@@ -27,6 +27,10 @@ dotenv.config();
 
 connectDB();
 
+// Start background sync service
+import { backgroundSyncService } from "./services/backgroundSync";
+backgroundSyncService.start();
+
 // Initialize Express app
 const apiVersion = env.API_VERSION || "v1";
 
