@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { Types } from "mongoose";
 import { tool, RunContext } from "@openai/agents";
-import { makeGitHubRequest } from "../lib/githubapis";
+import * as githubAdapters from "../services/adapters/github";
 import { TIntegrations } from "../../types/integrations";
 
 // --- REPOSITORIES ---
@@ -13,12 +13,7 @@ export const listRepos = tool({
   }),
   execute: async ({ visibility }, ctx?: RunContext<TIntegrations>) => {
     const access_token = ctx?.context?.["github"].access_token;
-    return makeGitHubRequest(
-      `/user/repos?per_page=100&visibility=${visibility}`,
-      "GET",
-      undefined,
-      access_token
-    );
+    return githubAdapters.listRepos(visibility, access_token);
   },
 });
 
@@ -30,12 +25,7 @@ export const searchRepos = tool({
   }),
   execute: async ({ query }, ctx?: RunContext<TIntegrations>) => {
     const access_token = ctx?.context?.["github"].access_token;
-    return makeGitHubRequest(
-      `/search/repositories?q=${encodeURIComponent(query)}`,
-      "GET",
-      undefined,
-      access_token
-    );
+    return githubAdapters.searchRepos(query, access_token);
   },
 });
 
@@ -49,13 +39,7 @@ export const searchGithub = tool({
   }),
   execute: async ({ query, type }, ctx?: RunContext<TIntegrations>) => {
     const access_token = ctx?.context?.["github"].access_token;
-
-    return makeGitHubRequest(
-      `/search/${type}?q=${encodeURIComponent(query)}`,
-      "GET",
-      undefined,
-      access_token
-    );
+    return githubAdapters.searchGithub(query, type, access_token);
   },
 });
 
@@ -65,12 +49,7 @@ export const getRepo = tool({
   parameters: z.object({ owner: z.string(), repo: z.string() }),
   execute: async ({ owner, repo }, ctx?: RunContext<TIntegrations>) => {
     const access_token = ctx?.context?.["github"].access_token;
-    return makeGitHubRequest(
-      `/repos/${owner}/${repo}`,
-      "GET",
-      undefined,
-      access_token
-    );
+    return githubAdapters.getRepo(owner, repo, access_token);
   },
 });
 
@@ -84,7 +63,7 @@ export const createRepo = tool({
   }),
   execute: async (args, ctx?: RunContext<TIntegrations>) => {
     const access_token = ctx?.context?.["github"].access_token;
-    return makeGitHubRequest("/user/repos", "POST", args, access_token);
+    return githubAdapters.createRepo(args, access_token);
   },
 });
 
@@ -94,12 +73,7 @@ export const deleteRepo = tool({
   parameters: z.object({ owner: z.string(), repo: z.string() }),
   execute: async ({ owner, repo }, ctx?: RunContext<TIntegrations>) => {
     const access_token = ctx?.context?.["github"].access_token;
-    return makeGitHubRequest(
-      `/repos/${owner}/${repo}`,
-      "DELETE",
-      undefined,
-      access_token
-    );
+    return githubAdapters.deleteRepo(owner, repo, access_token);
   },
 });
 
@@ -115,12 +89,7 @@ export const listPullRequests = tool({
   }),
   execute: async ({ owner, repo, state }, ctx?: RunContext<TIntegrations>) => {
     const access_token = ctx?.context?.["github"].access_token;
-    return makeGitHubRequest(
-      `/repos/${owner}/${repo}/pulls?state=${state}`,
-      "GET",
-      undefined,
-      access_token
-    );
+    return githubAdapters.listPullRequests(owner, repo, state, access_token);
   },
 });
 
@@ -130,12 +99,7 @@ export const searchPullRequests = tool({
   parameters: z.object({ query: z.string() }),
   execute: async ({ query }, ctx?: RunContext<TIntegrations>) => {
     const access_token = ctx?.context?.["github"].access_token;
-    return makeGitHubRequest(
-      `/search/issues?q=is:pr+${encodeURIComponent(query)}`,
-      "GET",
-      undefined,
-      access_token
-    );
+    return githubAdapters.searchPullRequests(query, access_token);
   },
 });
 
@@ -152,12 +116,7 @@ export const createPullRequest = tool({
   }),
   execute: async (args, ctx?: RunContext<TIntegrations>) => {
     const access_token = ctx?.context?.["github"].access_token;
-    return makeGitHubRequest(
-      `/repos/${args.owner}/${args.repo}/pulls`,
-      "POST",
-      args,
-      access_token
-    );
+    return githubAdapters.createPullRequest(args, access_token);
   },
 });
 
@@ -177,9 +136,10 @@ export const mergePullRequest = tool({
     ctx?: RunContext<TIntegrations>
   ) => {
     const access_token = ctx?.context?.["github"].access_token;
-    return makeGitHubRequest(
-      `/repos/${owner}/${repo}/pulls/${rest.pull_number}/merge`,
-      "PUT",
+    return githubAdapters.mergePullRequest(
+      owner,
+      repo,
+      rest.pull_number,
       rest,
       access_token
     );
@@ -199,12 +159,7 @@ export const listIssues = tool({
   }),
   execute: async ({ filter, state }, ctx?: RunContext<TIntegrations>) => {
     const access_token = ctx?.context?.["github"].access_token;
-    return makeGitHubRequest(
-      `/issues?filter=${filter}&state=${state}`,
-      "GET",
-      undefined,
-      access_token
-    );
+    return githubAdapters.listIssues(filter, state, access_token);
   },
 });
 
@@ -214,12 +169,7 @@ export const searchIssues = tool({
   parameters: z.object({ query: z.string() }),
   execute: async ({ query }, ctx?: RunContext<TIntegrations>) => {
     const access_token = ctx?.context?.["github"].access_token;
-    return makeGitHubRequest(
-      `/search/issues?q=is:issue+${encodeURIComponent(query)}`,
-      "GET",
-      undefined,
-      access_token
-    );
+    return githubAdapters.searchIssues(query, access_token);
   },
 });
 
@@ -234,12 +184,7 @@ export const createIssue = tool({
   }),
   execute: async (args, ctx?: RunContext<TIntegrations>) => {
     const access_token = ctx?.context?.["github"].access_token;
-    return makeGitHubRequest(
-      `/repos/${args.owner}/${args.repo}/issues`,
-      "POST",
-      args,
-      access_token
-    );
+    return githubAdapters.createIssue(args, access_token);
   },
 });
 
@@ -259,12 +204,7 @@ export const updateIssue = tool({
     ctx?: RunContext<TIntegrations>
   ) => {
     const access_token = ctx?.context?.["github"].access_token;
-    return makeGitHubRequest(
-      `/repos/${owner}/${repo}/issues/${issue_number}`,
-      "PATCH",
-      rest,
-      access_token
-    );
+    return githubAdapters.updateIssue(owner, repo, issue_number, rest, access_token);
   },
 });
 
@@ -282,12 +222,7 @@ export const commentOnIssue = tool({
     ctx?: RunContext<TIntegrations>
   ) => {
     const access_token = ctx?.context?.["github"].access_token;
-    return makeGitHubRequest(
-      `/repos/${owner}/${repo}/issues/${issue_number}/comments`,
-      "POST",
-      { body },
-      access_token
-    );
+    return githubAdapters.commentOnIssue(owner, repo, issue_number, body, access_token);
   },
 });
 
@@ -304,12 +239,7 @@ export const listIssueComments = tool({
     ctx?: RunContext<TIntegrations>
   ) => {
     const access_token = ctx?.context?.["github"].access_token;
-    return makeGitHubRequest(
-      `/repos/${owner}/${repo}/issues/${issue_number}/comments`,
-      "GET",
-      undefined,
-      access_token
-    );
+    return githubAdapters.listIssueComments(owner, repo, issue_number, access_token);
   },
 });
 
@@ -324,12 +254,7 @@ export const listNotifications = tool({
   }),
   execute: async ({ all, participating }, ctx?: RunContext<TIntegrations>) => {
     const access_token = ctx?.context?.["github"].access_token;
-    return makeGitHubRequest(
-      `/notifications?all=${all}&participating=${participating}`,
-      "GET",
-      undefined,
-      access_token
-    );
+    return githubAdapters.listNotifications(all, participating, access_token);
   },
 });
 
@@ -339,6 +264,6 @@ export const markAllNotificationsRead = tool({
   parameters: z.object({}),
   execute: async (_, ctx?: RunContext<TIntegrations>) => {
     const access_token = ctx?.context?.["github"].access_token;
-    return makeGitHubRequest(`/notifications`, "PUT", undefined, access_token);
+    return githubAdapters.markAllNotificationsRead(access_token);
   },
 });

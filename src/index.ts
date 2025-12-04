@@ -16,6 +16,12 @@ import { connectDB } from "./lib/db";
 import { env } from "./config/env";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
+import cron from "node-cron";
+import { IntegrationModel } from "./models/Integrations";
+import { AuthRequest, requireAuth } from "./middleware/auth";
+import { makeGitHubRequest } from "./lib/githubapis";
+import { getGmailService } from "./lib/googleapis";
+import { google } from "googleapis";
 
 dotenv.config();
 
@@ -68,6 +74,60 @@ const apiLimiter = rateLimit({
   },
 });
 
+app.get("/home", requireAuth, async (req: AuthRequest, res: Response) => {
+  // cron.schedule("*/10 * * * * *", () => {
+  //   logger.info("Running scheduled task every 10 seconds");
+  // });
+  const googleIntegrations = await IntegrationModel.find({
+    user_id: req.user._id,
+    name: "google",
+  });
+  const githubIntegrations = await IntegrationModel.find({
+    user_id: req.user._id,
+    name: "github",
+  });
+  const response = makeGitHubRequest(
+    `/notifications`,
+    "GET",
+    null,
+    githubIntegrations[0].access_token
+  );
+
+  const service = await getGmailService({
+    access_token: googleIntegrations[0].access_token,
+    refresh_token: googleIntegrations[0].refresh_token!,
+  });
+
+  // Step 1: get message IDs
+  const listRes = await service.users.messages.list({
+    userId: "me",
+    maxResults: 50,
+    q: "is:unread",
+  });
+
+  const messages = listRes.data.messages || [];
+
+  // Step 2: batch fetch the full messages
+  const detailedMessages = await Promise.all(
+    messages.map(async (msg) => {
+      const full = await service.users.messages.get({
+        userId: "me",
+        id: msg.id!,
+        format: "metadata",
+        metadataHeaders: ["Subject", "From"],
+      });
+      return {
+        id: msg.id,
+        snippet: full.data.snippet,
+        headers: full.data.payload?.headers,
+      };
+    })
+  );
+
+  console.log(detailedMessages);
+
+  res.status(200).json({ message: "Welcome to the WorqAI API!", response });
+});
 // Apply rate limiting and API routes
 app.use(`/${apiVersion}/`, apiLimiter, router);
 

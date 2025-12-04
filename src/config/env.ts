@@ -30,6 +30,7 @@ export const env = {
   PINECONE_API_KEY: process.env.PINECONE_API_KEY || "",
   INDEX_NAME: process.env.INDEX_NAME || "",
   OPENAI_API_KEY: process.env.OPENAI_API_KEY || "",
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY || "",
 };
 
-export const MODEL = "gpt-4o-mini";
+export const MODEL = "gpt-5.1";

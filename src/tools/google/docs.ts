@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { tool, RunContext } from "@openai/agents";
-import { getDocsService, getDriveService } from "../../lib/googleapis";
+import * as docsAdapters from "../../services/adapters/docs";
 import { TIntegrations } from "../../../types/integrations";
 
 // --- DOCUMENT MANAGEMENT ---
@@ -11,16 +11,11 @@ export const listDocs = tool({
   parameters: z.object({}),
   async execute(_, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const drive = await getDriveService({
+    return docsAdapters.listDocs({
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-    const res = await drive.files.list({
-      q: "mimeType='application/vnd.google-apps.document'",
-      fields: "files(id,name)",
-    });
-    return res.data;
   },
 });
 
@@ -30,16 +25,11 @@ export const searchDocs = tool({
   parameters: z.object({ query: z.string() }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const drive = await getDriveService({
+    return docsAdapters.searchDocs(args.query, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-    const res = await drive.files.list({
-      q: `name contains '${args.query}' and mimeType='application/vnd.google-apps.document'`,
-      fields: "files(id,name)",
-    });
-    return res.data;
   },
 });
 
@@ -49,15 +39,11 @@ export const createDoc = tool({
   parameters: z.object({ title: z.string() }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const docs = await getDocsService({
+    return docsAdapters.createDoc(args.title, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-    const res = await docs.documents.create({
-      requestBody: { title: args.title },
-    });
-    return res.data;
   },
 });
 
@@ -67,13 +53,11 @@ export const deleteDoc = tool({
   parameters: z.object({ fileId: z.string() }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const drive = await getDriveService({
+    return docsAdapters.deleteDoc(args.fileId, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-    await drive.files.delete({ fileId: args.fileId });
-    return { success: true };
   },
 });
 
@@ -83,25 +67,11 @@ export const insertText = tool({
   parameters: z.object({ fileId: z.string(), text: z.string() }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const docs = await getDocsService({
+    return docsAdapters.insertText(args.fileId, args.text, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-    const res = await docs.documents.batchUpdate({
-      documentId: args.fileId,
-      requestBody: {
-        requests: [
-          {
-            insertText: {
-              location: { index: 1 },
-              text: args.text,
-            },
-          },
-        ],
-      },
-    });
-    return res.data;
   },
 });
 
@@ -115,25 +85,16 @@ export const replaceText = tool({
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const docs = await getDocsService({
-      access_token: googleIntegration?.access_token!,
-      refresh_token: googleIntegration?.refresh_token!,
-      expires_at: googleIntegration?.expires_at,
-    });
-    const res = await docs.documents.batchUpdate({
-      documentId: args.fileId,
-      requestBody: {
-        requests: [
-          {
-            replaceAllText: {
-              containsText: { text: args.searchText, matchCase: false },
-              replaceText: args.replaceText,
-            },
-          },
-        ],
-      },
-    });
-    return res.data;
+    return docsAdapters.replaceText(
+      args.fileId,
+      args.searchText,
+      args.replaceText,
+      {
+        access_token: googleIntegration?.access_token!,
+        refresh_token: googleIntegration?.refresh_token!,
+        expires_at: googleIntegration?.expires_at,
+      }
+    );
   },
 });
 
@@ -147,21 +108,16 @@ export const shareDoc = tool({
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const drive = await getDriveService({
-      access_token: googleIntegration?.access_token!,
-      refresh_token: googleIntegration?.refresh_token!,
-      expires_at: googleIntegration?.expires_at,
-    });
-    const res = await drive.permissions.create({
-      fileId: args.fileId,
-      requestBody: {
-        type: "user",
-        role: args.role,
-        emailAddress: args.email,
-      },
-      sendNotificationEmail: false,
-    });
-    return res.data;
+    return docsAdapters.shareDoc(
+      args.fileId,
+      args.email,
+      args.role,
+      {
+        access_token: googleIntegration?.access_token!,
+        refresh_token: googleIntegration?.refresh_token!,
+        expires_at: googleIntegration?.expires_at,
+      }
+    );
   },
 });
 
@@ -171,13 +127,11 @@ export const listCollaborators = tool({
   parameters: z.object({ fileId: z.string() }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const drive = await getDriveService({
+    return docsAdapters.listCollaborators(args.fileId, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-    const res = await drive.permissions.list({ fileId: args.fileId });
-    return res.data;
   },
 });
 
@@ -187,15 +141,10 @@ export const getLastEdited = tool({
   parameters: z.object({ fileId: z.string() }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const drive = await getDriveService({
+    return docsAdapters.getLastEdited(args.fileId, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-    const res = await drive.files.get({
-      fileId: args.fileId,
-      fields: "modifiedTime",
-    });
-    return res.data;
   },
 });

@@ -1,5 +1,5 @@
 import { tool, RunContext } from "@openai/agents";
-import { makeSlackRequest } from "../lib/misc";
+import * as slackAdapters from "../services/adapters/slack";
 import { z } from "zod";
 import { TIntegrations } from "../../types/integrations";
 
@@ -8,13 +8,8 @@ export const listSlackChannels = tool({
   description: "List all channels in the Slack workspace",
   parameters: z.object({}),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const channels = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "conversations.list",
-      "GET",
-      undefined
-    );
-    return channels.channels;
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.listSlackChannels(access_token);
   },
 });
 
@@ -25,13 +20,8 @@ export const getChannelInfo = tool({
     channelId: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const channel = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "conversations.info",
-      "GET",
-      { channel: args.channelId }
-    );
-    return channel;
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.getChannelInfo(args.channelId, access_token);
   },
 });
 
@@ -42,13 +32,8 @@ export const getUserInfo = tool({
     userId: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const user = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "users.info",
-      "GET",
-      { user: args.userId }
-    );
-    return user;
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.getUserInfo(args.userId, access_token);
   },
 });
 
@@ -59,13 +44,8 @@ export const getChannelMessages = tool({
     channelId: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const messages = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "conversations.history",
-      "GET",
-      { channel: args.channelId }
-    );
-    return messages.messages;
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.getChannelMessages(args.channelId, access_token);
   },
 });
 
@@ -77,13 +57,12 @@ export const sendMessage = tool({
     message: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const response = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "chat.postMessage",
-      "POST",
-      { channel: args.channelId, text: args.message }
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.sendMessage(
+      args.channelId,
+      args.message,
+      access_token
     );
-    return response.message.text;
   },
 });
 
@@ -96,17 +75,13 @@ export const scheduleMessage = tool({
     scheduledTime: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const response = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "chat.scheduleMessage",
-      "POST",
-      {
-        channel: args.channelId,
-        text: args.message,
-        scheduled_time: args.scheduledTime,
-      }
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.scheduleMessage(
+      args.channelId,
+      args.message,
+      args.scheduledTime,
+      access_token
     );
-    return response.message.text;
   },
 });
 
@@ -117,13 +92,11 @@ export const deleteScheduledMessage = tool({
     scheduledMessageId: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const response = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "chat.deleteScheduledMessage",
-      "POST",
-      { scheduled_message_id: args.scheduledMessageId }
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.deleteScheduledMessage(
+      args.scheduledMessageId,
+      access_token
     );
-    return response.message.text;
   },
 });
 
@@ -135,13 +108,12 @@ export const updateScheduledMessage = tool({
     message: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const response = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "chat.updateScheduledMessage",
-      "POST",
-      { scheduled_message_id: args.scheduledMessageId, text: args.message }
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.updateScheduledMessage(
+      args.scheduledMessageId,
+      args.message,
+      access_token
     );
-    return response.message.text;
   },
 });
 
@@ -152,13 +124,8 @@ export const getScheduledMessages = tool({
     channelId: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const response = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "chat.getScheduledMessages",
-      "GET",
-      { channel: args.channelId }
-    );
-    return response.messages;
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.getScheduledMessages(args.channelId, access_token);
   },
 });
 
@@ -170,13 +137,12 @@ export const deleteMessage = tool({
     messageId: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const response = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "chat.delete",
-      "POST",
-      { channel: args.channelId, ts: args.messageId }
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.deleteMessage(
+      args.channelId,
+      args.messageId,
+      access_token
     );
-    return response.message.text;
   },
 });
 
@@ -186,15 +152,16 @@ export const sendEphemeralMessage = tool({
   parameters: z.object({
     userId: z.string(),
     message: z.string(),
+    channelId: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const response = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "chat.postEphemeral",
-      "POST",
-      { channel: args.channelId, text: args.message, user: args.userId }
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.sendEphemeralMessage(
+      args.userId,
+      args.channelId,
+      args.message,
+      access_token
     );
-    return response.message.text;
   },
 });
 
@@ -207,13 +174,13 @@ export const updateMessage = tool({
     message: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const response = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "chat.update",
-      "POST",
-      { channel: args.channelId, ts: args.messageId, text: args.message }
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.updateMessage(
+      args.channelId,
+      args.messageId,
+      args.message,
+      access_token
     );
-    return response.message.text;
   },
 });
 
@@ -224,13 +191,8 @@ export const getPresence = tool({
     userId: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const response = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "users.getPresence",
-      "GET",
-      { user: args.userId }
-    );
-    return response.presence;
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.getPresence(args.userId, access_token);
   },
 });
 
@@ -241,13 +203,8 @@ export const setStatus = tool({
     status: z.enum(["auto", "away"]),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const response = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "users.setPresence",
-      "POST",
-      { presence: args.status }
-    );
-    return response.message.text;
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.setStatus(args.status, access_token);
   },
 });
 
@@ -259,13 +216,12 @@ export const kickFromChannel = tool({
     userId: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const response = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "conversations.kick",
-      "POST",
-      { channel: args.channelId, user: args.userId }
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.kickFromChannel(
+      args.channelId,
+      args.userId,
+      access_token
     );
-    return response.message.text;
   },
 });
 
@@ -276,13 +232,8 @@ export const joinChannel = tool({
     channelId: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const response = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "conversations.join",
-      "POST",
-      { channel: args.channelId }
-    );
-    return response.message.text;
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.joinChannel(args.channelId, access_token);
   },
 });
 
@@ -293,13 +244,8 @@ export const leaveChannel = tool({
     channelId: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const response = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "conversations.leave",
-      "POST",
-      { channel: args.channelId }
-    );
-    return response.message.text;
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.leaveChannel(args.channelId, access_token);
   },
 });
 
@@ -311,13 +257,12 @@ export const inviteToChannel = tool({
     userId: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const response = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "conversations.invite",
-      "POST",
-      { channel: args.channelId, users: args.userId }
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.inviteToChannel(
+      args.channelId,
+      args.userId,
+      access_token
     );
-    return response.message.text;
   },
 });
 
@@ -330,17 +275,13 @@ export const addReaction = tool({
     reaction: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const response = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "reactions.add",
-      "POST",
-      {
-        channel: args.channelId,
-        timestamp: args.messageId,
-        name: args.reaction,
-      }
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.addReaction(
+      args.channelId,
+      args.messageId,
+      args.reaction,
+      access_token
     );
-    return response.message.text;
   },
 });
 
@@ -353,17 +294,13 @@ export const removeReaction = tool({
     reaction: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const response = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "reactions.remove",
-      "POST",
-      {
-        channel: args.channelId,
-        timestamp: args.messageId,
-        name: args.reaction,
-      }
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.removeReaction(
+      args.channelId,
+      args.messageId,
+      args.reaction,
+      access_token
     );
-    return response.message.text;
   },
 });
 
@@ -375,13 +312,12 @@ export const unpinMessage = tool({
     messageId: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const response = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "pins.remove",
-      "POST",
-      { channel: args.channelId, timestamp: args.messageId }
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.unpinMessage(
+      args.channelId,
+      args.messageId,
+      access_token
     );
-    return response.message.text;
   },
 });
 
@@ -393,13 +329,12 @@ export const pinMessage = tool({
     messageId: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const response = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "pins.add",
-      "POST",
-      { channel: args.channelId, timestamp: args.messageId }
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.pinMessage(
+      args.channelId,
+      args.messageId,
+      access_token
     );
-    return response.message.text;
   },
 });
 
@@ -411,13 +346,12 @@ export const uploadFile = tool({
     file: z.instanceof(File),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const response = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "files.upload",
-      "POST",
-      { channel: args.channelId, file: args.file }
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.uploadFile(
+      args.channelId,
+      args.file,
+      access_token
     );
-    return response.message.text;
   },
 });
 
@@ -426,38 +360,8 @@ export const getUnreadMessages = tool({
   description: "Get unread messages from all joined channels",
   parameters: z.object({}),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const response = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "conversations.list",
-      "GET",
-      { exclude_archived: true }
-    );
-    const channels = response.channels;
-    const unreadMessages: any[] = [];
-    for (const channel of channels) {
-      const channelInfo = await makeSlackRequest(
-        runContext?.context?.["slack"].access_token!,
-        "conversations.info",
-        "GET",
-        { channel: channel.id }
-      );
-      const unreadCount = channelInfo.channel.unread_count_display;
-      if (unreadCount === 0) continue;
-      const history = await makeSlackRequest(
-        runContext?.context?.["slack"].access_token!,
-        "conversations.history",
-        "GET",
-        { channel: channel.id, limit: unreadCount }
-      );
-      unreadMessages.push(
-        ...history.messages.map((message: any) => ({
-          channel: channel.name,
-          time: message.ts,
-          text: message.text,
-        }))
-      );
-    }
-    return unreadMessages;
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.getUnreadMessages(access_token);
   },
 });
 
@@ -468,14 +372,8 @@ export const archiveChannel = tool({
     channelId: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const response = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "conversations.archive",
-      "POST",
-      { channel: args.channelId }
-    );
-
-    return response.message.text;
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.archiveChannel(args.channelId, access_token);
   },
 });
 
@@ -486,13 +384,8 @@ export const unarchiveChannel = tool({
     channelId: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const response = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "conversations.unarchive",
-      "POST",
-      { channel: args.channelId }
-    );
-    return response.message.text;
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.unarchiveChannel(args.channelId, access_token);
   },
 });
 
@@ -503,13 +396,7 @@ export const getChannelMembers = tool({
     channelId: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const response = await makeSlackRequest(
-      runContext?.context?.["slack"].access_token!,
-      "conversations.members",
-      "GET",
-      { channel: args.channelId }
-    );
-
-    return response.members;
+    const access_token = runContext?.context?.["slack"].access_token!;
+    return slackAdapters.getChannelMembers(args.channelId, access_token);
   },
 });

@@ -49,11 +49,9 @@ export async function makeGitHubRequest(
   endpoint: string,
   method: string = "GET",
   data?: any,
-  userId?: string
+  access_token?: string
 ) {
-  const integration = userId ? await getGitHubIntegration(userId) : null;
-
-  if (!integration?.access_token) {
+  if (!access_token) {
     throw new Error("GitHub integration not found or no access token");
   }
 
@@ -61,12 +59,14 @@ export async function makeGitHubRequest(
     method,
     url: `https://api.github.com${endpoint}`,
     headers: {
-      Authorization: `token ${integration.access_token}`,
+      Authorization: `token ${access_token}`,
       Accept: "application/vnd.github.v3+json",
       "User-Agent": "WorqAI-App",
     },
     data,
   });
+
+  console.log(response.data);
 
   return response.data;
 }

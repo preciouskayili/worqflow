@@ -71,22 +71,22 @@ export async function messageEvents(req: AuthRequest, res: Response) {
     return;
   }
 
-  const integrationsMap = {};
+  const integrationsMap = {} as Record<string, any>;
 
   integrations.forEach((integration) => {
     integrationsMap[integration.name] = integration;
   });
 
-  const contextMessages = await getRelevantMessages(
-    userMsg.content,
-    req.user._id.toString(),
-    threadId,
-    10
-  );
+  // const contextMessages = await getRelevantMessages(
+  //   userMsg.content,
+  //   req.user._id.toString(),
+  //   threadId,
+  //   10
+  // );
 
-  const historyText = contextMessages.length
-    ? `<history>${contextMessages.map((m) => m.content).join("\n\n")}</history>`
-    : "";
+  // const historyText = contextMessages.length
+  //   ? `<history>${contextMessages.map((m) => m.content).join("\n\n")}</history>`
+  //   : "";
 
   const runContext = {
     userId: req.user._id,
@@ -107,7 +107,7 @@ export async function messageEvents(req: AuthRequest, res: Response) {
       mainAgent,
       `User: \n${req.user.name ?? "[Not Provided]"}\n${
         req.user.email
-      }\n\nMessage: ${userMsg.content}\n\n${historyText}`,
+      }\n\nMessage: ${userMsg.content}`,
       { context: runContext, stream: true }
     );
 

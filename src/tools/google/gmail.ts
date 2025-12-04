@@ -1,8 +1,7 @@
 import { tool } from "@openai/agents";
 import { z } from "zod";
-import { getGmailService } from "../../lib/googleapis";
+import * as gmailAdapters from "../../services/adapters/gmail";
 import { RunContext } from "@openai/agents";
-import { encode } from "../../lib/misc";
 import { TIntegrations } from "../../../types/integrations";
 
 export const sendEmail = tool({
@@ -15,24 +14,11 @@ export const sendEmail = tool({
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getGmailService({
+    return gmailAdapters.sendEmail(args, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    const raw = Buffer.from(
-      `To: ${args.to}\r\n` +
-        `Subject: ${args.subject}\r\n\r\n` +
-        `${args.message}`
-    ).toString("base64url");
-
-    const res = await service.users.messages.send({
-      userId: "me",
-      requestBody: { raw },
-    });
-
-    return res.data;
   },
 });
 
@@ -48,37 +34,11 @@ export const listEmails = tool({
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getGmailService({
+    return gmailAdapters.listEmails(args, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    const res = await service.users.messages.list({
-      userId: "me",
-      q: args.query,
-      maxResults: args.maxResults,
-    });
-
-    const messages = res.data.messages || [];
-
-    const detailedMessages = await Promise.all(
-      messages.map(async (msg) => {
-        const full = await service.users.messages.get({
-          userId: "me",
-          id: msg.id!,
-          format: "metadata",
-          metadataHeaders: ["Subject", "From"],
-        });
-        return {
-          id: msg.id,
-          snippet: full.data.snippet,
-          headers: full.data.payload?.headers,
-        };
-      })
-    );
-
-    return detailedMessages;
   },
 });
 
@@ -90,22 +50,11 @@ export const readEmail = tool({
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getGmailService({
+    return gmailAdapters.readEmail(args.messageId, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    const res = await service.users.messages.get({
-      userId: "me",
-      id: args.messageId,
-      format: "full",
-    });
-    return {
-      id: res.data.id,
-      snippet: res.data.snippet,
-      payload: res.data.payload,
-    };
   },
 });
 
@@ -119,28 +68,11 @@ export const createDraft = tool({
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getGmailService({
+    return gmailAdapters.createDraft(args, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    const raw = Buffer.from(
-      `To: ${args.to}\r\n` +
-        `Subject: ${args.subject}\r\n\r\n` +
-        `${args.message}`
-    ).toString("base64url");
-
-    const res = await service.users.drafts.create({
-      userId: "me",
-      requestBody: {
-        message: {
-          raw,
-        },
-      },
-    });
-
-    return res.data;
   },
 });
 
@@ -150,17 +82,11 @@ export const listLabels = tool({
   parameters: z.object({}),
   async execute(_, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getGmailService({
+    return gmailAdapters.listLabels({
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    const res = await service.users.labels.list({
-      userId: "me",
-    });
-
-    return res.data.labels;
   },
 });
 
@@ -173,21 +99,15 @@ export const addLabelToEmail = tool({
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getGmailService({
-      access_token: googleIntegration?.access_token!,
-      refresh_token: googleIntegration?.refresh_token!,
-      expires_at: googleIntegration?.expires_at,
-    });
-
-    const res = await service.users.messages.modify({
-      userId: "me",
-      id: args.messageId,
-      requestBody: {
-        addLabelIds: [args.labelId],
-      },
-    });
-
-    return res.data;
+    return gmailAdapters.addLabelToEmail(
+      args.messageId,
+      args.labelId,
+      {
+        access_token: googleIntegration?.access_token!,
+        refresh_token: googleIntegration?.refresh_token!,
+        expires_at: googleIntegration?.expires_at,
+      }
+    );
   },
 });
 
@@ -199,19 +119,11 @@ export const markAsRead = tool({
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getGmailService({
+    return gmailAdapters.markAsRead(args.messageId, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-    const res = await service.users.messages.modify({
-      userId: "me",
-      id: args.messageId,
-      requestBody: {
-        removeLabelIds: ["UNREAD"],
-      },
-    });
-    return res.data;
   },
 });
 
@@ -223,19 +135,11 @@ export const archiveEmail = tool({
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getGmailService({
+    return gmailAdapters.archiveEmail(args.messageId, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-    const res = await service.users.messages.modify({
-      userId: "me",
-      id: args.messageId,
-      requestBody: {
-        removeLabelIds: ["INBOX"],
-      },
-    });
-    return res.data;
   },
 });
 
@@ -248,37 +152,11 @@ export const searchEmails = tool({
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getGmailService({
+    return gmailAdapters.searchEmails(args, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    const res = await service.users.messages.list({
-      userId: "me",
-      q: args.query,
-      maxResults: args.maxResults,
-    });
-
-    const messages = res.data.messages || [];
-
-    const detailed = await Promise.all(
-      messages.map(async (msg) => {
-        const full = await service.users.messages.get({
-          userId: "me",
-          id: msg.id!,
-          format: "metadata",
-          metadataHeaders: ["Subject", "From"],
-        });
-        return {
-          id: msg.id,
-          snippet: full.data.snippet,
-          headers: full.data.payload?.headers,
-        };
-      })
-    );
-
-    return detailed;
   },
 });
 
@@ -292,20 +170,11 @@ export const listEmailsByDate = tool({
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getGmailService({
+    return gmailAdapters.listEmailsByDate(args, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    const query = `after:${args.startDate} before:${args.endDate}`;
-    const res = await service.users.messages.list({
-      userId: "me",
-      q: query,
-      maxResults: args.maxResults,
-    });
-
-    return res.data.messages || [];
   },
 });
 
@@ -317,19 +186,11 @@ export const getEmailById = tool({
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getGmailService({
+    return gmailAdapters.getEmailById(args.messageId, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    const res = await service.users.messages.get({
-      userId: "me",
-      id: args.messageId,
-      format: "full",
-    });
-
-    return res.data;
   },
 });
 
@@ -341,18 +202,11 @@ export const getThreadById = tool({
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getGmailService({
+    return gmailAdapters.getThreadById(args.threadId, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    const thread = await service.users.threads.get({
-      userId: "me",
-      id: args.threadId,
-    });
-
-    return thread.data;
   },
 });
 
@@ -364,18 +218,27 @@ export const listThreads = tool({
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getGmailService({
+    return gmailAdapters.listThreads(args.maxResults, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
+  },
+});
 
-    const res = await service.users.threads.list({
-      userId: "me",
-      maxResults: args.maxResults,
+export const listUnreadEmails = tool({
+  name: "list_unread_emails",
+  description: "Lists unread emails in the user's Gmail account",
+  parameters: z.object({
+    maxResults: z.number().min(1).max(20).default(5),
+  }),
+  async execute(args, runContext?: RunContext<TIntegrations>) {
+    const googleIntegration = runContext?.context?.["google"];
+    return gmailAdapters.listUnreadEmails(args.maxResults, {
+      access_token: googleIntegration?.access_token!,
+      refresh_token: googleIntegration?.refresh_token!,
+      expires_at: googleIntegration?.expires_at,
     });
-
-    return res.data.threads || [];
   },
 });
 
@@ -387,20 +250,11 @@ export const markAsUnread = tool({
   }),
   async execute({ messageId }, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getGmailService({
+    return gmailAdapters.markAsUnread(messageId, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    await service.users.messages.modify({
-      userId: "me",
-      id: messageId,
-      requestBody: {
-        removeLabelIds: ["LABEL_READ"],
-      },
-    });
-    return { success: true };
   },
 });
 
@@ -412,17 +266,11 @@ export const trashEmail = tool({
   }),
   async execute({ messageId }, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getGmailService({
+    return gmailAdapters.trashEmail(messageId, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    await service.users.messages.trash({
-      userId: "me",
-      id: messageId,
-    });
-    return { success: true };
   },
 });
 
@@ -434,17 +282,11 @@ export const untrashEmail = tool({
   }),
   async execute({ messageId }, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getGmailService({
+    return gmailAdapters.untrashEmail(messageId, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    await service.users.messages.untrash({
-      userId: "me",
-      id: messageId,
-    });
-    return { success: true };
   },
 });
 
@@ -454,14 +296,11 @@ export const getLabels = tool({
   parameters: z.object({}),
   async execute(_, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getGmailService({
+    return gmailAdapters.getLabels({
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    const res = await service.users.labels.list({ userId: "me" });
-    return res.data.labels || [];
   },
 });
 
@@ -473,21 +312,11 @@ export const createLabel = tool({
   }),
   async execute({ labelName }, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getGmailService({
+    return gmailAdapters.createLabel(labelName, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    const res = await service.users.labels.create({
-      userId: "me",
-      requestBody: {
-        name: labelName,
-        labelListVisibility: "labelShow",
-        messageListVisibility: "show",
-      },
-    });
-    return res.data;
   },
 });
 
@@ -506,28 +335,14 @@ export const replyToEmail = tool({
     runContext?: RunContext<TIntegrations>
   ) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getGmailService({
-      access_token: googleIntegration?.access_token!,
-      refresh_token: googleIntegration?.refresh_token!,
-      expires_at: googleIntegration?.expires_at,
-    });
-
-    const rawMessage = encode({
-      to,
-      subject,
-      body,
-      inReplyTo: messageId,
-    });
-
-    const res = await service.users.messages.send({
-      userId: "me",
-      requestBody: {
-        threadId,
-        raw: rawMessage,
-      },
-    });
-
-    return res.data;
+    return gmailAdapters.replyToEmail(
+      { threadId, to, subject, body, messageId },
+      {
+        access_token: googleIntegration?.access_token!,
+        refresh_token: googleIntegration?.refresh_token!,
+        expires_at: googleIntegration?.expires_at,
+      }
+    );
   },
 });
 
@@ -544,20 +359,15 @@ export const modifyEmailLabels = tool({
     runContext?: RunContext<TIntegrations>
   ) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getGmailService({
-      access_token: googleIntegration?.access_token!,
-      refresh_token: googleIntegration?.refresh_token!,
-      expires_at: googleIntegration?.expires_at,
-    });
-
-    await service.users.messages.modify({
-      userId: "me",
-      id: messageId,
-      requestBody: {
-        addLabelIds: addLabelIds || [],
-        removeLabelIds: removeLabelIds || [],
-      },
-    });
-    return { success: true };
+    return gmailAdapters.modifyEmailLabels(
+      messageId,
+      addLabelIds,
+      removeLabelIds,
+      {
+        access_token: googleIntegration?.access_token!,
+        refresh_token: googleIntegration?.refresh_token!,
+        expires_at: googleIntegration?.expires_at,
+      }
+    );
   },
 });

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { tool, RunContext } from "@openai/agents";
-import { getFigmaClient } from "../lib/misc";
+import * as figmaAdapters from "../services/adapters/figma";
 import { TIntegrations } from "../../types/integrations";
 
 // List team projects
@@ -10,9 +10,7 @@ export const listFigmaProjects = tool({
   parameters: z.object({ teamId: z.string() }),
   async execute({ teamId }, runContext?: RunContext<TIntegrations>) {
     const token = runContext?.context?.["figma"].access_token!;
-    const figma = await getFigmaClient(token);
-    const res = await figma.get(`/teams/${teamId}/projects`);
-    return res.data;
+    return figmaAdapters.listFigmaProjects(teamId, token);
   },
 });
 
@@ -23,9 +21,7 @@ export const listFigmaFiles = tool({
   parameters: z.object({ projectId: z.string() }),
   async execute({ projectId }, runContext?: RunContext<TIntegrations>) {
     const token = runContext?.context?.["figma"].access_token!;
-    const figma = await getFigmaClient(token);
-    const res = await figma.get(`/projects/${projectId}/files`);
-    return res.data;
+    return figmaAdapters.listFigmaFiles(projectId, token);
   },
 });
 
@@ -36,9 +32,7 @@ export const getFigmaFile = tool({
   parameters: z.object({ fileId: z.string() }),
   async execute({ fileId }, runContext?: RunContext<TIntegrations>) {
     const token = runContext?.context?.["figma"].access_token!;
-    const figma = await getFigmaClient(token);
-    const res = await figma.get(`/files/${fileId}`);
-    return res.data;
+    return figmaAdapters.getFigmaFile(fileId, token);
   },
 });
 
@@ -49,10 +43,7 @@ export const getFigmaFileNodes = tool({
   parameters: z.object({ fileId: z.string(), nodeIds: z.array(z.string()) }),
   async execute({ fileId, nodeIds }, runContext?: RunContext<TIntegrations>) {
     const token = runContext?.context?.["figma"].access_token!;
-    const figma = await getFigmaClient(token);
-    const params = nodeIds.map((id) => `ids=${id}`).join("&");
-    const res = await figma.get(`/files/${fileId}/nodes?${params}`);
-    return res.data;
+    return figmaAdapters.getFigmaFileNodes(fileId, nodeIds, token);
   },
 });
 
@@ -63,9 +54,7 @@ export const getFigmaFileComponents = tool({
   parameters: z.object({ fileId: z.string() }),
   async execute({ fileId }, runContext?: RunContext<TIntegrations>) {
     const token = runContext?.context?.["figma"].access_token!;
-    const figma = await getFigmaClient(token);
-    const res = await figma.get(`/files/${fileId}/components`);
-    return res.data;
+    return figmaAdapters.getFigmaFileComponents(fileId, token);
   },
 });
 
@@ -83,12 +72,7 @@ export const exportFigmaImages = tool({
     runContext?: RunContext<TIntegrations>
   ) {
     const token = runContext?.context?.["figma"].access_token!;
-    const figma = await getFigmaClient(token);
-    const params = new URLSearchParams();
-    params.set("ids", nodeIds.join(","));
-    if (scale) params.set("scale", scale.toString());
-    const res = await figma.get(`/images/${fileId}?${params.toString()}`);
-    return res.data;
+    return figmaAdapters.exportFigmaImages(fileId, nodeIds, scale, token);
   },
 });
 
@@ -99,9 +83,7 @@ export const getFigmaFileComments = tool({
   parameters: z.object({ fileId: z.string() }),
   async execute({ fileId }, runContext?: RunContext<TIntegrations>) {
     const token = runContext?.context?.["figma"].access_token!;
-    const figma = await getFigmaClient(token);
-    const res = await figma.get(`/files/${fileId}/comments`);
-    return res.data;
+    return figmaAdapters.getFigmaFileComments(fileId, token);
   },
 });
 
@@ -112,9 +94,7 @@ export const listFigmaNotifications = tool({
   parameters: z.object({}),
   async execute(_, runContext?: RunContext<TIntegrations>) {
     const token = runContext?.context?.["figma"].access_token!;
-    const figma = await getFigmaClient(token);
-    const res = await figma.get(`/user/notifications`);
-    return res.data;
+    return figmaAdapters.listFigmaNotifications(token);
   },
 });
 
@@ -125,9 +105,7 @@ export const listFigmaTeamMembers = tool({
   parameters: z.object({ teamId: z.string() }),
   async execute({ teamId }, runContext?: RunContext<TIntegrations>) {
     const token = runContext?.context?.["figma"].access_token!;
-    const figma = await getFigmaClient(token);
-    const res = await figma.get(`/teams/${teamId}/members`);
-    return res.data;
+    return figmaAdapters.listFigmaTeamMembers(teamId, token);
   },
 });
 
@@ -145,9 +123,7 @@ export const inviteFigmaTeamMember = tool({
     runContext?: RunContext<TIntegrations>
   ) {
     const token = runContext?.context?.["figma"].access_token!;
-    const figma = await getFigmaClient(token);
-    const res = await figma.post(`/teams/${teamId}/members`, { email, role });
-    return res.data;
+    return figmaAdapters.inviteFigmaTeamMember(teamId, email, role, token);
   },
 });
 
@@ -158,9 +134,7 @@ export const createFigmaFile = tool({
   parameters: z.object({ projectId: z.string(), name: z.string() }),
   async execute({ projectId, name }, runContext?: RunContext<TIntegrations>) {
     const token = runContext?.context?.["figma"].access_token!;
-    const figma = await getFigmaClient(token);
-    const res = await figma.post(`/projects/${projectId}/files`, { name });
-    return res.data;
+    return figmaAdapters.createFigmaFile(projectId, name, token);
   },
 });
 
@@ -171,9 +145,7 @@ export const deleteFigmaFile = tool({
   parameters: z.object({ fileId: z.string() }),
   async execute({ fileId }, runContext?: RunContext<TIntegrations>) {
     const token = runContext?.context?.["figma"].access_token!;
-    const figma = await getFigmaClient(token);
-    const res = await figma.delete(`/files/${fileId}`);
-    return res.data;
+    return figmaAdapters.deleteFigmaFile(fileId, token);
   },
 });
 
@@ -184,9 +156,7 @@ export const updateFigmaFile = tool({
   parameters: z.object({ fileId: z.string(), name: z.string() }),
   async execute({ fileId, name }, runContext?: RunContext<TIntegrations>) {
     const token = runContext?.context?.["figma"].access_token!;
-    const figma = await getFigmaClient(token);
-    const res = await figma.put(`/files/${fileId}`, { name });
-    return res.data;
+    return figmaAdapters.updateFigmaFile(fileId, name, token);
   },
 });
 
@@ -197,8 +167,6 @@ export const searchFigmaFiles = tool({
   parameters: z.object({ query: z.string() }),
   async execute({ query }, runContext?: RunContext<TIntegrations>) {
     const token = runContext?.context?.["figma"].access_token!;
-    const figma = await getFigmaClient(token);
-    const res = await figma.get(`/search?query=${query}`);
-    return res.data;
+    return figmaAdapters.searchFigmaFiles(query, token);
   },
 });

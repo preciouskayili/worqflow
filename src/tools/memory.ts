@@ -1,7 +1,7 @@
 import { tool } from "@openai/agents";
 import { z } from "zod";
 import { RunContext } from "@openai/agents";
-import { saveMemory } from "../lib/vectorestore";
+import * as memoryAdapters from "../services/adapters/memory";
 
 export const createMemory = tool({
   name: "create_memory",
@@ -13,7 +13,9 @@ export const createMemory = tool({
     args: { text: string },
     runContext?: RunContext<{ userId: string }>
   ) {
-    await saveMemory(args.text, runContext?.context?.userId!);
-    return "Memory created";
+    return memoryAdapters.createMemory(
+      args.text,
+      runContext?.context?.userId!
+    );
   },
 });

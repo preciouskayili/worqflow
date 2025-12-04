@@ -1,6 +1,6 @@
 import { tool, RunContext } from "@openai/agents";
 import { z } from "zod";
-import { getLinearClient } from "../lib/misc";
+import * as linearAdapters from "../services/adapters/linear";
 import { TIntegrations } from "../../types/integrations";
 
 export const listLinearIssues = tool({
@@ -11,17 +11,8 @@ export const listLinearIssues = tool({
     teamId: z.string().optional().nullable(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const linear = await getLinearClient(
-      runContext?.context?.["linear"].access_token!
-    );
-    const res = await linear.issues({
-      filter: {
-        assignee: { isMe: { eq: true } },
-        state: args.status ? { name: { eq: args.status } } : undefined,
-        team: args.teamId ? { id: { eq: args.teamId } } : undefined,
-      },
-    });
-    return res.nodes;
+    const access_token = runContext?.context?.["linear"].access_token!;
+    return linearAdapters.listLinearIssues(args, access_token);
   },
 });
 
@@ -34,15 +25,8 @@ export const createLinearIssue = tool({
     description: z.string().optional().nullable(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const linear = await getLinearClient(
-      runContext?.context?.["linear"].access_token!
-    );
-    const res = await linear.createIssue({
-      teamId: args.teamId,
-      title: args.title,
-      description: args.description,
-    });
-    return res.issue;
+    const access_token = runContext?.context?.["linear"].access_token!;
+    return linearAdapters.createLinearIssue(args, access_token);
   },
 });
 
@@ -54,14 +38,8 @@ export const commentOnLinearIssue = tool({
     body: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const linear = await getLinearClient(
-      runContext?.context?.["linear"].access_token!
-    );
-    const res = await linear.createComment({
-      issueId: args.issueId,
-      body: args.body,
-    });
-    return res.comment;
+    const access_token = runContext?.context?.["linear"].access_token!;
+    return linearAdapters.commentOnLinearIssue(args, access_token);
   },
 });
 
@@ -72,16 +50,8 @@ export const getLinearUserByName = tool({
     name: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const linear = await getLinearClient(
-      runContext?.context?.["linear"].access_token!
-    );
-    const res = await linear.users({
-      first: 1,
-      filter: {
-        name: { eq: args.name },
-      },
-    });
-    return res.nodes[0];
+    const access_token = runContext?.context?.["linear"].access_token!;
+    return linearAdapters.getLinearUserByName(args.name, access_token);
   },
 });
 
@@ -92,16 +62,8 @@ export const getLinearUserByEmail = tool({
     email: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const linear = await getLinearClient(
-      runContext?.context?.["linear"].access_token!
-    );
-    const res = await linear.users({
-      first: 1,
-      filter: {
-        email: { eq: args.email },
-      },
-    });
-    return res.nodes[0];
+    const access_token = runContext?.context?.["linear"].access_token!;
+    return linearAdapters.getLinearUserByEmail(args.email, access_token);
   },
 });
 
@@ -112,11 +74,8 @@ export const getMembers = tool({
     teamId: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const linear = await getLinearClient(
-      runContext?.context?.["linear"].access_token!
-    );
-    const res = await linear.teamMemberships(args.teamId);
-    return res.nodes.map((member) => member.user);
+    const access_token = runContext?.context?.["linear"].access_token!;
+    return linearAdapters.getMembers(args.teamId, access_token);
   },
 });
 
@@ -127,13 +86,8 @@ export const getLinearUserIssues = tool({
     userName: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const linear = await getLinearClient(
-      runContext?.context?.["linear"].access_token!
-    );
-    const res = await linear.issues({
-      filter: { assignee: { name: { eq: args.userName } } },
-    });
-    return res.nodes;
+    const access_token = runContext?.context?.["linear"].access_token!;
+    return linearAdapters.getLinearUserIssues(args.userName, access_token);
   },
 });
 
@@ -144,13 +98,8 @@ export const getLinearIssueByTitle = tool({
     title: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const linear = await getLinearClient(
-      runContext?.context?.["linear"].access_token!
-    );
-    const res = await linear.issues({
-      filter: { title: { eq: args.title } },
-    });
-    return res.nodes;
+    const access_token = runContext?.context?.["linear"].access_token!;
+    return linearAdapters.getLinearIssueByTitle(args.title, access_token);
   },
 });
 
@@ -161,14 +110,8 @@ export const getLinearTeamByName = tool({
     name: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const linear = await getLinearClient(
-      runContext?.context?.["linear"].access_token!
-    );
-    const res = await linear.teams({
-      first: 1,
-      filter: { name: { eq: args.name } },
-    });
-    return res.nodes[0];
+    const access_token = runContext?.context?.["linear"].access_token!;
+    return linearAdapters.getLinearTeamByName(args.name, access_token);
   },
 });
 
@@ -179,11 +122,8 @@ export const getLinearTeamById = tool({
     id: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const linear = await getLinearClient(
-      runContext?.context?.["linear"].access_token!
-    );
-    const res = await linear.team(args.id);
-    return res;
+    const access_token = runContext?.context?.["linear"].access_token!;
+    return linearAdapters.getLinearTeamById(args.id, access_token);
   },
 });
 
@@ -192,11 +132,8 @@ export const listLinearTeams = tool({
   description: "List all Linear teams",
   parameters: z.object({}),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const linear = await getLinearClient(
-      runContext?.context?.["linear"].access_token!
-    );
-    const res = await linear.teams();
-    return res.nodes;
+    const access_token = runContext?.context?.["linear"].access_token!;
+    return linearAdapters.listLinearTeams(access_token);
   },
 });
 
@@ -208,13 +145,12 @@ export const updateLinearIssueStatus = tool({
     stateId: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const linear = await getLinearClient(
-      runContext?.context?.["linear"].access_token!
+    const access_token = runContext?.context?.["linear"].access_token!;
+    return linearAdapters.updateLinearIssueStatus(
+      args.issueId,
+      args.stateId,
+      access_token
     );
-    const res = await linear.updateIssue(args.issueId, {
-      stateId: args.stateId,
-    });
-    return res.issue;
   },
 });
 
@@ -225,16 +161,8 @@ export const getTodoIssuesByTeamId = tool({
     teamId: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const linear = await getLinearClient(
-      runContext?.context?.["linear"].access_token!
-    );
-    const res = await linear.issues({
-      filter: {
-        team: { id: { eq: args.teamId } },
-        state: { name: { eq: "Todo" } },
-      },
-    });
-    return res.nodes;
+    const access_token = runContext?.context?.["linear"].access_token!;
+    return linearAdapters.getTodoIssuesByTeamId(args.teamId, access_token);
   },
 });
 
@@ -245,16 +173,11 @@ export const getUnassignedIssuesByTeamId = tool({
     teamId: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const linear = await getLinearClient(
-      runContext?.context?.["linear"].access_token!
+    const access_token = runContext?.context?.["linear"].access_token!;
+    return linearAdapters.getUnassignedIssuesByTeamId(
+      args.teamId,
+      access_token
     );
-    const res = await linear.issues({
-      filter: {
-        team: { id: { eq: args.teamId } },
-        assignee: { isMe: { eq: false } },
-      },
-    });
-    return res.nodes;
   },
 });
 
@@ -265,11 +188,8 @@ export const getLinearIssue = tool({
     issueId: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const linear = await getLinearClient(
-      runContext?.context?.["linear"].access_token!
-    );
-    const res = await linear.issue(args.issueId);
-    return res;
+    const access_token = runContext?.context?.["linear"].access_token!;
+    return linearAdapters.getLinearIssue(args.issueId, access_token);
   },
 });
 
@@ -278,15 +198,8 @@ export const getAssignedLinearIssues = tool({
   description: "Get all Linear issues assigned to the user",
   parameters: z.object({}),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const linear = await getLinearClient(
-      runContext?.context?.["linear"].access_token!
-    );
-    const res = await linear.issues({
-      filter: {
-        assignee: { isMe: { eq: true } },
-      },
-    });
-    return res.nodes;
+    const access_token = runContext?.context?.["linear"].access_token!;
+    return linearAdapters.getAssignedLinearIssues(access_token);
   },
 });
 
@@ -298,13 +211,12 @@ export const assignLinearIssue = tool({
     assigneeId: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const linear = await getLinearClient(
-      runContext?.context?.["linear"].access_token!
+    const access_token = runContext?.context?.["linear"].access_token!;
+    return linearAdapters.assignLinearIssue(
+      args.issueId,
+      args.assigneeId,
+      access_token
     );
-    const res = await linear.updateIssue(args.issueId, {
-      assigneeId: args.assigneeId,
-    });
-    return res.issue;
   },
 });
 
@@ -343,25 +255,8 @@ export const createLinearProject = tool({
     color: z.string().optional().nullable(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const linear = await getLinearClient(
-      runContext?.context?.["linear"].access_token!
-    );
-    const res = await linear.createProject({
-      name: args.name,
-      teamIds: [args.teamId],
-      description: args.description,
-      memberIds: args.memberIds,
-      content: args.content,
-      priority: args.priority,
-      leadId: args.leadId,
-      labelIds: args.labelIds,
-      startDate: args.startDate,
-      targetDate: args.dueDate,
-      statusId: args.statusId,
-      color: args.color,
-    });
-
-    return res.project;
+    const access_token = runContext?.context?.["linear"].access_token!;
+    return linearAdapters.createLinearProject(args, access_token);
   },
 });
 
@@ -372,11 +267,8 @@ export const getLinearStatuses = tool({
     teamId: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const linear = await getLinearClient(
-      runContext?.context?.["linear"].access_token!
-    );
-    const res = await linear.customerStatuses();
-    return res.nodes;
+    const access_token = runContext?.context?.["linear"].access_token!;
+    return linearAdapters.getLinearStatuses(args.teamId, access_token);
   },
 });
 
@@ -387,11 +279,8 @@ export const getLinearStatusById = tool({
     id: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const linear = await getLinearClient(
-      runContext?.context?.["linear"].access_token!
-    );
-    const res = await linear.customerStatus(args.id);
-    return res;
+    const access_token = runContext?.context?.["linear"].access_token!;
+    return linearAdapters.getLinearStatusById(args.id, access_token);
   },
 });
 
@@ -402,16 +291,8 @@ export const getLabels = tool({
     teamId: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const linear = await getLinearClient(
-      runContext?.context?.["linear"].access_token!
-    );
-
-    const res = await linear.issueLabels({
-      filter: {
-        team: { id: { eq: args.teamId } },
-      },
-    });
-    return res.nodes;
+    const access_token = runContext?.context?.["linear"].access_token!;
+    return linearAdapters.getLabels(args.teamId, access_token);
   },
 });
 
@@ -424,18 +305,7 @@ export const createLabel = tool({
     color: z.string(),
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
-    const linear = await getLinearClient(
-      runContext?.context?.["linear"].access_token!
-    );
-
-    const res = await linear.createIssueLabel({
-      teamId: args.teamId,
-      name: args.name,
-      color: args.color,
-    });
-    return {
-      id: res.issueLabelId,
-      name: res.issueLabel,
-    };
+    const access_token = runContext?.context?.["linear"].access_token!;
+    return linearAdapters.createLabel(args, access_token);
   },
 });

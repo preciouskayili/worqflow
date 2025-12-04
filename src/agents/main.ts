@@ -1,6 +1,13 @@
-import { Agent } from "@openai/agents";
+import {
+  Agent,
+  OpenAIProvider,
+  setDefaultOpenAIClient,
+  setOpenAIAPI,
+  setDefaultModelProvider,
+  setTracingDisabled,
+} from "@openai/agents";
 import { MAIN_AGENT_PROMPT } from "../lib/prompts";
-import { MODEL } from "../config/env";
+import { env, MODEL } from "../config/env";
 import { calendarAgent } from "./google/calendar";
 import { memoryAgent } from "./memory";
 import { gmailAgent } from "./google/mail";
@@ -9,6 +16,21 @@ import { docsAgent } from "./google/docs";
 import { slackAgent } from "./slack";
 import { linearAgent } from "./linear";
 import { figmaAgent } from "./figma";
+import OpenAI from "openai";
+
+const openaiClient = new OpenAI({
+  apiKey: "free",
+  baseURL: "https://api.algion.dev/v1",
+});
+
+const modelProvider = new OpenAIProvider({
+  openAIClient: openaiClient,
+});
+
+setOpenAIAPI("chat_completions");
+setDefaultModelProvider(modelProvider);
+setDefaultOpenAIClient(openaiClient);
+setTracingDisabled(true);
 
 export const mainAgent = new Agent({
   name: "main_agent",

@@ -1,8 +1,6 @@
 import { tool } from "@openai/agents";
 import { z } from "zod";
-import { getCalendarService } from "../../lib/googleapis";
-import { getDayBoundsInUTC, formatEvent } from "../../lib/misc";
-import { calendar_v3 } from "googleapis";
+import * as calendarAdapters from "../../services/adapters/calendar";
 import { RunContext } from "@openai/agents";
 import { TIntegrations } from "../../../types/integrations";
 
@@ -15,17 +13,11 @@ export const createCalendarList = tool({
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getCalendarService({
+    return calendarAdapters.createCalendarList(args, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    const res = await service.calendars.insert({
-      requestBody: { summary: args.calendarName },
-    });
-
-    return res.data;
   },
 });
 
@@ -38,22 +30,11 @@ export const listCalendarList = tool({
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getCalendarService({
+    return calendarAdapters.listCalendarList(args, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    const res = await service.calendarList.list({
-      maxResults: Math.min(200, args.maxCapacity),
-    });
-    return (
-      res.data.items?.map((c) => ({
-        id: c.id!,
-        name: c.summary!,
-        description: c.description ?? "",
-      })) || []
-    );
   },
 });
 
@@ -67,19 +48,11 @@ export const listCalendarEvents = tool({
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getCalendarService({
+    return calendarAdapters.listCalendarEvents(args, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    const res = await service.events.list({
-      calendarId: args.calendarId,
-      maxResults: args.maxCapacity,
-      singleEvents: true,
-      orderBy: "startTime",
-    });
-    return res.data.items?.map(formatEvent) || [];
   },
 });
 
@@ -95,23 +68,11 @@ export const listEventsForDate = tool({
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getCalendarService({
+    return calendarAdapters.listEventsForDate(args, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    const date = new Date(args.date);
-    const { timeMin, timeMax } = getDayBoundsInUTC(date, "Africa/Lagos");
-
-    const res = await service.events.list({
-      calendarId: args.calendarId,
-      timeMin,
-      timeMax,
-      singleEvents: true,
-      orderBy: "startTime",
-    });
-    return res.data.items?.map(formatEvent) || [];
   },
 });
 
@@ -131,30 +92,11 @@ export const listEventsInRange = tool({
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getCalendarService({
+    return calendarAdapters.listEventsInRange(args, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    const { timeMin } = getDayBoundsInUTC(
-      new Date(args.startDate),
-      "Africa/Lagos"
-    );
-
-    const { timeMax } = getDayBoundsInUTC(
-      new Date(args.endDate),
-      "Africa/Lagos"
-    );
-
-    const res = await service.events.list({
-      calendarId: args.calendarId,
-      timeMin,
-      timeMax,
-      singleEvents: true,
-      orderBy: "startTime",
-    });
-    return res.data.items?.map(formatEvent) || [];
   },
 });
 
@@ -169,31 +111,11 @@ export const listCurrentCalendarEvents = tool({
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getCalendarService({
+    return calendarAdapters.listCurrentCalendarEvents(args, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    const { timeMin } = getDayBoundsInUTC(new Date(), "Africa/Lagos");
-
-    const res = await service.events.list({
-      calendarId: args.calendarId,
-      timeMin,
-      maxResults: args.maxCapacity,
-      singleEvents: true,
-      orderBy: "startTime",
-    });
-
-    const events = res.data.items ?? [];
-    const now = new Date();
-
-    const ongoing = events.filter((e) => {
-      const start = new Date(e.start?.dateTime || e.start?.date || "");
-      const end = new Date(e.end?.dateTime || e.end?.date || "");
-      return start <= now && now <= end;
-    });
-    return ongoing.map(formatEvent);
   },
 });
 
@@ -206,22 +128,11 @@ export const listTodaysEvents = tool({
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getCalendarService({
+    return calendarAdapters.listTodaysEvents(args, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    const { timeMin, timeMax } = getDayBoundsInUTC(new Date(), "Africa/Lagos");
-
-    const res = await service.events.list({
-      calendarId: args.calendarId,
-      timeMin,
-      timeMax,
-      singleEvents: true,
-      orderBy: "startTime",
-    });
-    return res.data.items?.map(formatEvent) || [];
   },
 });
 
@@ -238,32 +149,11 @@ export const insertCalendarEvent = tool({
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getCalendarService({
+    return calendarAdapters.insertCalendarEvent(args, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    const event: calendar_v3.Schema$Event = {
-      summary: args.summary,
-      description: args.description || undefined,
-      start: {
-        dateTime: args.startTime,
-        timeZone: "Africa/Lagos",
-      },
-      end: {
-        dateTime: args.endTime,
-        timeZone: "Africa/Lagos",
-      },
-      attendees: args.attendees?.map((email) => ({ email })) || undefined,
-    };
-
-    const res = await service.events.insert({
-      calendarId: args.calendarId,
-      requestBody: event,
-    });
-
-    return res.data;
   },
 });
 
@@ -280,35 +170,11 @@ export const updateCalendarEvent = tool({
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getCalendarService({
+    return calendarAdapters.updateCalendarEvent(args, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    const event: calendar_v3.Schema$Event = {};
-    if (args.summary) event.summary = args.summary;
-    if (args.description) event.description = args.description;
-    if (args.startTime) {
-      event.start = {
-        dateTime: args.startTime,
-        timeZone: "Africa/Lagos",
-      };
-    }
-    if (args.endTime) {
-      event.end = {
-        dateTime: args.endTime,
-        timeZone: "Africa/Lagos",
-      };
-    }
-
-    const res = await service.events.update({
-      calendarId: args.calendarId,
-      eventId: args.eventId,
-      requestBody: event,
-    });
-
-    return res.data;
   },
 });
 
@@ -321,17 +187,10 @@ export const deleteCalendarEvent = tool({
   }),
   async execute(args, runContext?: RunContext<TIntegrations>) {
     const googleIntegration = runContext?.context?.["google"];
-    const service = await getCalendarService({
+    return calendarAdapters.deleteCalendarEvent(args, {
       access_token: googleIntegration?.access_token!,
       refresh_token: googleIntegration?.refresh_token!,
       expires_at: googleIntegration?.expires_at,
     });
-
-    await service.events.delete({
-      calendarId: args.calendarId,
-      eventId: args.eventId,
-    });
-
-    return { success: true };
   },
 });

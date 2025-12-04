@@ -71,21 +71,21 @@ export async function saveChatHistory(
     thread: threadId,
   });
 
-  const embedding = await getEmbedding(query);
+  // const embedding = await getEmbedding(query);
 
-  await pc.index(INDEX_NAME).upsert([
-    {
-      id: uuidv4(),
-      values: embedding,
-      metadata: {
-        user_id: userId,
-        thread_id: threadId,
-        timestamp: new Date().toISOString(),
-        role,
-        message_id: msg._id.toString(),
-      },
-    },
-  ]);
+  // await pc.index(INDEX_NAME).upsert([
+  //   {
+  //     id: uuidv4(),
+  //     values: embedding,
+  //     metadata: {
+  //       user_id: userId,
+  //       thread_id: threadId,
+  //       timestamp: new Date().toISOString(),
+  //       role,
+  //       message_id: msg._id.toString(),
+  //     },
+  //   },
+  // ]);
 
   return msg;
 }
