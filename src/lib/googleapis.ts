@@ -26,8 +26,13 @@ export async function refreshAndSaveTokens(
       updates.refresh_token = tokens.refresh_token;
     if (tokens.expiry_date) {
       const iso = new Date(tokens.expiry_date).toISOString();
-      if (iso !== integration.expires_at?.toISOString())
-        updates.expires_at = tokens.expiry_date;
+      // Handle both Date objects and strings from MongoDB
+      const existingExpiresAt = integration.expires_at
+        ? typeof integration.expires_at === "string"
+          ? new Date(integration.expires_at).toISOString()
+          : integration.expires_at.toISOString()
+        : null;
+      if (iso !== existingExpiresAt) updates.expires_at = tokens.expiry_date;
     }
 
     if (Object.keys(updates).length) {
