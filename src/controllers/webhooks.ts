@@ -14,7 +14,7 @@ export async function gmailWebhook(req: Request, res: Response) {
 
     // Handle actual webhook notification
     const { emailAddress, historyId } = req.body;
-    
+
     if (emailAddress) {
       // Find user by email and invalidate their cache
       // Note: You'll need to store email -> userId mapping or query by integration
@@ -26,9 +26,11 @@ export async function gmailWebhook(req: Request, res: Response) {
       if (integration) {
         invalidateUserCache(integration.user_id.toString());
         // Trigger immediate sync
-        backgroundSyncService.syncUser(integration.user_id.toString()).catch(
-          (err) => logger.error("Error syncing user after Gmail webhook:", err)
-        );
+        backgroundSyncService
+          .syncUser(integration.user_id.toString())
+          .catch((err) =>
+            logger.error("Error syncing user after Gmail webhook:", err)
+          );
       }
     }
 
@@ -59,9 +61,11 @@ export async function slackWebhook(req: Request, res: Response) {
 
       if (integration) {
         invalidateUserCache(integration.user_id.toString());
-        backgroundSyncService.syncUser(integration.user_id.toString()).catch(
-          (err) => logger.error("Error syncing user after Slack webhook:", err)
-        );
+        backgroundSyncService
+          .syncUser(integration.user_id.toString())
+          .catch((err) =>
+            logger.error("Error syncing user after Slack webhook:", err)
+          );
       }
     }
 
@@ -85,9 +89,11 @@ export async function githubWebhook(req: Request, res: Response) {
 
     if (integration) {
       invalidateUserCache(integration.user_id.toString());
-      backgroundSyncService.syncUser(integration.user_id.toString()).catch(
-        (err) => logger.error("Error syncing user after GitHub webhook:", err)
-      );
+      backgroundSyncService
+        .syncUser(integration.user_id.toString())
+        .catch((err) =>
+          logger.error("Error syncing user after GitHub webhook:", err)
+        );
     }
 
     res.status(200).json({ success: true });
@@ -110,9 +116,11 @@ export async function linearWebhook(req: Request, res: Response) {
 
       if (integration) {
         invalidateUserCache(integration.user_id.toString());
-        backgroundSyncService.syncUser(integration.user_id.toString()).catch(
-          (err) => logger.error("Error syncing user after Linear webhook:", err)
-        );
+        backgroundSyncService
+          .syncUser(integration.user_id.toString())
+          .catch((err) =>
+            logger.error("Error syncing user after Linear webhook:", err)
+          );
       }
     }
 
@@ -127,7 +135,7 @@ export async function linearWebhook(req: Request, res: Response) {
 export async function triggerSync(req: Request, res: Response) {
   try {
     const { userId } = req.body;
-    
+
     if (!userId) {
       return res.status(400).json({ error: "userId is required" });
     }
@@ -139,4 +147,3 @@ export async function triggerSync(req: Request, res: Response) {
     res.status(500).json({ error: error.message });
   }
 }
-

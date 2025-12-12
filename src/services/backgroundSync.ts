@@ -42,14 +42,14 @@ class BackgroundSyncService {
     try {
       // Get all users with at least one integration
       const integrations = await IntegrationModel.distinct("user_id");
-      
+
       logger.info(`Syncing data for ${integrations.length} users`);
 
       // Sync in batches to avoid overwhelming the system
       const batchSize = 10;
       for (let i = 0; i < integrations.length; i += batchSize) {
         const batch = integrations.slice(i, i + batchSize);
-        
+
         await Promise.allSettled(
           batch.map((userId) =>
             syncUserData(userId.toString()).catch((err) => {
@@ -84,4 +84,3 @@ class BackgroundSyncService {
 }
 
 export const backgroundSyncService = new BackgroundSyncService();
-

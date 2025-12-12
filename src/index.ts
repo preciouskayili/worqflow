@@ -128,8 +128,6 @@ app.get("/home", requireAuth, async (req: AuthRequest, res: Response) => {
     })
   );
 
-  console.log(detailedMessages);
-
   res.status(200).json({ message: "Welcome to the WorqAI API!", response });
 });
 // Apply rate limiting and API routes

@@ -1,6 +1,7 @@
 import axios from "axios";
 import { env } from "../config/env";
 import { IntegrationModel } from "../models/Integrations";
+import { logger } from "../lib/logger";
 
 const GITHUB_CLIENT_ID = env.GITHUB_CLIENT_ID;
 const GITHUB_CLIENT_SECRET = env.GITHUB_CLIENT_SECRET;
@@ -66,7 +67,7 @@ export async function makeGitHubRequest(
     data,
   });
 
-  console.log(response.data);
+  logger.info("GitHub User Data Refreshed");
 
   return response.data;
 }

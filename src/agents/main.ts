@@ -16,20 +16,15 @@ import { docsAgent } from "./google/docs";
 import { slackAgent } from "./slack";
 import { linearAgent } from "./linear";
 import { figmaAgent } from "./figma";
-import OpenAI from "openai";
-
-const openaiClient = new OpenAI({
-  apiKey: "free",
-  baseURL: "https://api.algion.dev/v1",
-});
+import openai from "../lib/openai";
 
 const modelProvider = new OpenAIProvider({
-  openAIClient: openaiClient,
+  openAIClient: openai,
 });
 
 setOpenAIAPI("chat_completions");
 setDefaultModelProvider(modelProvider);
-setDefaultOpenAIClient(openaiClient);
+setDefaultOpenAIClient(openai);
 setTracingDisabled(true);
 
 export const mainAgent = new Agent({

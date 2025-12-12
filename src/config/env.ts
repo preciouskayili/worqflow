@@ -33,4 +33,4 @@ export const env = {
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || "",
 };
 
-export const MODEL = "gpt-5.1";
+export const MODEL = "gemini-2.5-flash";

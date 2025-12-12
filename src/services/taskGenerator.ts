@@ -1,3 +1,4 @@
+import { MODEL } from "../config/env";
 import openai from "../lib/openai";
 
 export interface Task {
@@ -54,7 +55,7 @@ Return ONLY a valid JSON array, no other text. Maximum 10 tasks.`;
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: MODEL,
       messages: [
         {
           role: "system",
@@ -95,4 +96,3 @@ Return ONLY a valid JSON array, no other text. Maximum 10 tasks.`;
     return [];
   }
 }
-

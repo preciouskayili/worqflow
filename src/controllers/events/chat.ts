@@ -154,6 +154,5 @@ export async function messageEvents(req: AuthRequest, res: Response) {
   req.on("close", () => {
     clearTimeout(timeout);
     clearInterval(heartbeat);
-    console.log("Client disconnected from SSE");
   });
 }

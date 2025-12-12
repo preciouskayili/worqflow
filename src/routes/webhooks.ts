@@ -19,4 +19,3 @@ router.post("/linear", linearWebhook);
 router.post("/sync", triggerSync);
 
 export default router;
-

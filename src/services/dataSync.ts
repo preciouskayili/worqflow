@@ -72,7 +72,7 @@ export interface UserData {
 export async function syncUserData(userId: string): Promise<UserData> {
   const cacheKey = `user-data-${userId}`;
   const cached = dataCache.get<UserData>(cacheKey);
-  
+
   // Return cached data if less than 30 seconds old
   if (cached && Date.now() - cached.lastUpdated < 30000) {
     return cached;
@@ -90,13 +90,17 @@ export async function syncUserData(userId: string): Promise<UserData> {
   };
 
   // Fetch all integrations in parallel
-  const [googleIntegration, slackIntegration, linearIntegration, githubIntegration] =
-    await Promise.all([
-      IntegrationModel.findOne({ user_id: userId, name: "google" }),
-      IntegrationModel.findOne({ user_id: userId, name: "slack" }),
-      IntegrationModel.findOne({ user_id: userId, name: "linear" }),
-      IntegrationModel.findOne({ user_id: userId, name: "github" }),
-    ]);
+  const [
+    googleIntegration,
+    slackIntegration,
+    linearIntegration,
+    githubIntegration,
+  ] = await Promise.all([
+    IntegrationModel.findOne({ user_id: userId, name: "google" }),
+    IntegrationModel.findOne({ user_id: userId, name: "slack" }),
+    IntegrationModel.findOne({ user_id: userId, name: "linear" }),
+    IntegrationModel.findOne({ user_id: userId, name: "github" }),
+  ]);
 
   // Fetch data from each service in parallel
   const fetchPromises: Promise<void>[] = [];
@@ -137,13 +141,17 @@ export async function syncUserData(userId: string): Promise<UserData> {
             );
 
             const eventsRes = await calendarService.events.list({
-              calendarId: calendars[0].id,
+              calendarId: "primary",
               timeMin,
               timeMax,
               singleEvents: true,
               orderBy: "startTime",
               maxResults: 20,
             });
+
+            console.log("===================");
+            console.log(eventsRes.data);
+            console.log("===================");
 
             data.calendarEvents = eventsRes.data.items || [];
           }
@@ -191,7 +199,10 @@ export async function syncUserData(userId: string): Promise<UserData> {
           data.githubNotifications = notifications.slice(0, 10);
         })
         .catch((err) => {
-          console.error(`Error fetching GitHub notifications for user ${userId}:`, err);
+          console.error(
+            `Error fetching GitHub notifications for user ${userId}:`,
+            err
+          );
         })
     );
 
@@ -202,7 +213,10 @@ export async function syncUserData(userId: string): Promise<UserData> {
           data.githubIssues = issues.slice(0, 10);
         })
         .catch((err) => {
-          console.error(`Error fetching GitHub issues for user ${userId}:`, err);
+          console.error(
+            `Error fetching GitHub issues for user ${userId}:`,
+            err
+          );
         })
     );
 
@@ -235,4 +249,3 @@ export function invalidateUserCache(userId: string, source?: string): void {
   const pattern = `user-data-${userId}`;
   dataCache.invalidate(pattern);
 }
-
