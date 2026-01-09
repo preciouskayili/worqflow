@@ -231,7 +231,38 @@ export const listNotifications = async (
   );
 };
 
+export const listInvitations = async (access_token: string) => {
+  return makeGitHubRequest(
+    "/user/repository_invitations",
+    "GET",
+    undefined,
+    access_token
+  );
+};
+
+export const acceptInvitation = async (
+  invitation_id: number,
+  access_token: string
+) => {
+  return makeGitHubRequest(
+    `/user/repository_invitations/${invitation_id}`,
+    "PATCH",
+    undefined,
+    access_token
+  );
+};
+
+export const declineInvitation = async (
+  invitation_id: number,
+  access_token: string
+) => {
+  return makeGitHubRequest(
+    `/user/repository_invitations/${invitation_id}`,
+    "DELETE",
+    undefined,
+    access_token
+  );
+};
 export const markAllNotificationsRead = async (access_token: string) => {
   return makeGitHubRequest(`/notifications`, "PUT", undefined, access_token);
 };
-
