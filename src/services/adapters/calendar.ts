@@ -5,7 +5,7 @@ import { calendar_v3 } from "googleapis";
 type Integration = {
   access_token: string;
   refresh_token: string;
-  expires_at?: string;
+  expires_at?: any;
 };
 
 export const createCalendarList = async (

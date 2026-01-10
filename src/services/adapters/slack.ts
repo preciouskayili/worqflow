@@ -24,12 +24,9 @@ export const getChannelInfo = async (
 };
 
 export const getUserInfo = async (userId: string, access_token: string) => {
-  const user = await makeSlackRequest(
-    access_token,
-    "users.info",
-    "GET",
-    { user: userId }
-  );
+  const user = await makeSlackRequest(access_token, "users.info", "GET", {
+    user: userId,
+  });
   return user;
 };
 
@@ -124,12 +121,10 @@ export const deleteMessage = async (
   messageId: string,
   access_token: string
 ) => {
-  const response = await makeSlackRequest(
-    access_token,
-    "chat.delete",
-    "POST",
-    { channel: channelId, ts: messageId }
-  );
+  const response = await makeSlackRequest(access_token, "chat.delete", "POST", {
+    channel: channelId,
+    ts: messageId,
+  });
   return response.message.text;
 };
 
@@ -154,12 +149,11 @@ export const updateMessage = async (
   message: string,
   access_token: string
 ) => {
-  const response = await makeSlackRequest(
-    access_token,
-    "chat.update",
-    "POST",
-    { channel: channelId, ts: messageId, text: message }
-  );
+  const response = await makeSlackRequest(access_token, "chat.update", "POST", {
+    channel: channelId,
+    ts: messageId,
+    text: message,
+  });
   return response.message.text;
 };
 
@@ -210,10 +204,7 @@ export const joinChannel = async (channelId: string, access_token: string) => {
   return response.message.text;
 };
 
-export const leaveChannel = async (
-  channelId: string,
-  access_token: string
-) => {
+export const leaveChannel = async (channelId: string, access_token: string) => {
   const response = await makeSlackRequest(
     access_token,
     "conversations.leave",
@@ -280,12 +271,10 @@ export const unpinMessage = async (
   messageId: string,
   access_token: string
 ) => {
-  const response = await makeSlackRequest(
-    access_token,
-    "pins.remove",
-    "POST",
-    { channel: channelId, timestamp: messageId }
-  );
+  const response = await makeSlackRequest(access_token, "pins.remove", "POST", {
+    channel: channelId,
+    timestamp: messageId,
+  });
   return response.message.text;
 };
 
@@ -294,12 +283,10 @@ export const pinMessage = async (
   messageId: string,
   access_token: string
 ) => {
-  const response = await makeSlackRequest(
-    access_token,
-    "pins.add",
-    "POST",
-    { channel: channelId, timestamp: messageId }
-  );
+  const response = await makeSlackRequest(access_token, "pins.add", "POST", {
+    channel: channelId,
+    timestamp: messageId,
+  });
   return response.message.text;
 };
 
@@ -341,13 +328,29 @@ export const getUnreadMessages = async (access_token: string) => {
       "GET",
       { channel: channel.id, limit: unreadCount }
     );
-    unreadMessages.push(
-      ...history.messages.map((message: any) => ({
+    for (const message of history.messages) {
+      let user_profile = undefined;
+      try {
+        if (message.user) {
+          const userInfo = await makeSlackRequest(
+            access_token,
+            "users.info",
+            "GET",
+            { user: message.user }
+          );
+          user_profile = userInfo.user?.profile;
+        }
+      } catch (e) {
+        // ignore profile fetch failures
+      }
+      unreadMessages.push({
         channel: channel.name,
         time: message.ts,
         text: message.text,
-      }))
-    );
+        user: message.user,
+        user_profile,
+      });
+    }
   }
   return unreadMessages;
 };
@@ -392,4 +395,3 @@ export const getChannelMembers = async (
 
   return response.members;
 };
-

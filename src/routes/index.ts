@@ -5,6 +5,7 @@ import integrationsRouter from "./integrations";
 import { requireAuth } from "../middleware/auth";
 import taskRouter from "./task.ts";
 import eventsRouter from "./events";
+import inboxRouter from "./inbox";
 
 const router = Router();
 
@@ -16,6 +17,7 @@ router.use("/auth", authRouter);
 router.use("/oauth", requireAuth, oauthRouter);
 router.use("/integrations", requireAuth, integrationsRouter);
 router.use("/ai", requireAuth, taskRouter);
+router.use("/inbox", requireAuth, inboxRouter);
 router.use(
   "/streams",
   requireAuth,

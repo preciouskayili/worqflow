@@ -1,10 +1,11 @@
+import { AnyAaaaRecord } from "dns";
 import { getGmailService } from "../../lib/googleapis";
 import { encode } from "../../lib/misc";
 
 type Integration = {
   access_token: string;
   refresh_token: string;
-  expires_at?: string;
+  expires_at?: any;
 };
 
 export const sendEmail = async (
@@ -264,7 +265,26 @@ export const listUnreadEmails = async (
     maxResults: maxResults,
   });
 
-  return res.data.messages || [];
+  const messages = res.data.messages || [];
+
+  const detailedMessages = await Promise.all(
+    messages.map(async (msg) => {
+      const full = await service.users.messages.get({
+        userId: "me",
+        id: msg.id!,
+        format: "metadata",
+        metadataHeaders: ["Subject", "From"],
+      });
+      return {
+        id: msg.id,
+        snippet: full.data.snippet,
+        headers: full.data.payload?.headers,
+        internalDate: full.data.internalDate,
+      };
+    })
+  );
+
+  return detailedMessages;
 };
 
 export const markAsUnread = async (
