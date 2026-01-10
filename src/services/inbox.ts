@@ -1,18 +1,10 @@
 import { IntegrationModel } from "../models/Integrations";
-import { UserModel } from "../models/User";
 import { logger } from "../lib/logger";
 import * as calendarAdapters from "./adapters/calendar";
 import * as gmailAdapters from "./adapters/gmail";
 import * as linearAdapters from "./adapters/linear";
 import * as githubAdapters from "./adapters/github";
 import * as slackAdapters from "./adapters/slack";
-import {
-  formatEmailMessage,
-  formatSlackMessage,
-  formatGithubNotification,
-  formatLinearIssue,
-  getAvatarFromEmail,
-} from "../lib/misc";
 
 export default class Inbox {
   private readonly userId: string;
@@ -44,17 +36,6 @@ export default class Inbox {
 
   async getMessages() {
     logger.info(`[Inbox] getMessages start for user ${this.userId}`);
-
-    const user = await UserModel.findById(this.userId)
-      .lean()
-      .catch(() => null);
-    const userProfile = user
-      ? {
-          name: user.name || undefined,
-          email: user.email || undefined,
-          avatar: getAvatarFromEmail(user.email),
-        }
-      : { name: undefined, email: undefined, avatar: undefined };
 
     const integrationsArray = await this.getIntegrations();
     type Integration = (typeof integrationsArray)[number];
@@ -93,10 +74,7 @@ export default class Inbox {
             Array.isArray(messages) ? messages.length : 0
           } Slack messages`
         );
-        // normalize slack messages
-        data.slackMessages.push(
-          ...messages.map((m: any) => ({ ...formatSlackMessage(m) }))
-        );
+        data.slackMessages.push(...messages);
       } catch (err) {
         logger.error(`[Inbox] Error fetching Slack messages: ${err}`);
       }
@@ -132,18 +110,7 @@ export default class Inbox {
               Array.isArray(events) ? events.length : 0
             } calendar events`
           );
-          // calendarAdapters.formatEvent returns a string; attach user info
-          data.calendarEvents.push(
-            ...events.map((ev: any, i: number) => ({
-              id: ev.id || `cal-${i}`,
-              type: "calendar",
-              title: ev.summary || "Event",
-              text: ev,
-              createdAt: ev.start || undefined,
-              user: userProfile,
-              raw: ev,
-            }))
-          );
+          data.calendarEvents.push(...events);
         } catch (err) {
           logger.error(`[Inbox] Error fetching calendar events: ${err}`);
         }
@@ -162,8 +129,7 @@ export default class Inbox {
               Array.isArray(emails) ? emails.length : 0
             } emails`
           );
-          // format emails with sender info
-          data.emails.push(...emails.map((e: any) => formatEmailMessage(e)));
+          data.emails.push(...emails);
         } catch (err) {
           logger.error(`[Inbox] Error fetching unread emails: ${err}`);
         }
@@ -190,9 +156,7 @@ export default class Inbox {
             Array.isArray(notifications) ? notifications.length : 0
           } GitHub notifications`
         );
-        data.githubNotifications.push(
-          ...notifications.map((n: any) => formatGithubNotification(n))
-        );
+        data.githubNotifications.push(...notifications);
       } catch (err) {
         logger.error(`[Inbox] Error fetching GitHub notifications: ${err}`);
       }
@@ -246,9 +210,7 @@ export default class Inbox {
             Array.isArray(assignedIssues) ? assignedIssues.length : 0
           } Linear issues`
         );
-        data.linearIssues.push(
-          ...assignedIssues.map((i: any) => formatLinearIssue(i))
-        );
+        data.linearIssues.push(...assignedIssues);
       } catch (err) {
         logger.error(`[Inbox] Error fetching Linear issues: ${err}`);
       }
@@ -262,7 +224,5 @@ export default class Inbox {
     logger.info(
       `[Inbox] getMessages completed for user ${this.userId} — emails: ${data.emails.length}, calendarEvents: ${data.calendarEvents.length}, slackMessages: ${data.slackMessages.length}, linearIssues: ${data.linearIssues.length}, githubNotifications: ${data.githubNotifications.length}, githubIssues: ${data.githubIssues.length}, githubPRs: ${data.githubPRs.length}`
     );
-
-    return data;
   }
 }

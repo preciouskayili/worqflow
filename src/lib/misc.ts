@@ -4,7 +4,6 @@ import { Response } from "express";
 import { LinearClient } from "@linear/sdk";
 import { Client as NotionClient } from "@notionhq/client";
 import axios from "axios";
-import crypto from "crypto";
 
 export async function makeSlackRequest(
   access_token: string,
@@ -84,101 +83,6 @@ export function formatEvent(event: calendar_v3.Schema$Event) {
     : "";
 
   return `${title} — ${start} to ${end}${location}${attendees}`;
-}
-
-export function getAvatarFromEmail(email?: string | null) {
-  if (!email) return null;
-  const clean = email.trim().toLowerCase();
-  const hash = crypto.createHash("md5").update(clean).digest("hex");
-  return `https://www.gravatar.com/avatar/${hash}?d=identicon&s=200`;
-}
-
-export function formatEmailMessage(msg: any) {
-  // msg expected to have: id, snippet, headers (array of {name, value}), payload
-  const headers = msg.headers || [];
-  const from = headers.find((h: any) => h.name === "From")?.value || "";
-  const subject =
-    headers.find((h: any) => h.name === "Subject")?.value || "(no subject)";
-  // try to extract name and email from From header
-  const m = from.match(/(?:(.*) )?<([^>]+)>/);
-  const name = m ? m[1]?.replace(/"/g, "")?.trim() : from;
-  const email = m ? m[2] : from.includes("@") ? from : undefined;
-
-  return {
-    id: msg.id,
-    type: "email",
-    title: subject,
-    text: msg.snippet || "",
-    createdAt: msg.internalDate ? Number(msg.internalDate) : undefined,
-    user: {
-      name: name || undefined,
-      email: email || undefined,
-      avatar: getAvatarFromEmail(email),
-    },
-    raw: msg,
-  };
-}
-
-export function formatSlackMessage(msg: any) {
-  // expected msg: { channel, time, text, user, user_profile }
-  return {
-    id: `${msg.channel || "slack"}-${msg.time}`,
-    type: "slack",
-    title: msg.channel || "Slack",
-    text: msg.text || "",
-    createdAt: msg.time
-      ? Number(Math.floor(Number(msg.time) * 1000))
-      : undefined,
-    user: {
-      id: msg.user || undefined,
-      name:
-        msg.user_profile?.real_name ||
-        msg.user_profile?.display_name ||
-        undefined,
-      username: msg.user_profile?.name || undefined,
-      avatar: msg.user_profile?.image_72 || undefined,
-    },
-    raw: msg,
-  };
-}
-
-export function formatGithubNotification(n: any) {
-  // n: notification object from GitHub
-  return {
-    id: n.id,
-    type: "github",
-    title: n.subject?.title || n.repository?.full_name || "GitHub",
-    text: `${n.repository?.full_name || ""} — ${
-      n.subject?.type || "notification"
-    }`,
-    createdAt: n.updated_at ? new Date(n.updated_at).getTime() : undefined,
-    user: {
-      // GitHub notification doesn't include actor; leave undefined
-      name: undefined,
-      username: undefined,
-      avatar: undefined,
-    },
-    raw: n,
-  };
-}
-
-export function formatLinearIssue(issue: any) {
-  return {
-    id: issue.id,
-    type: "linear",
-    title: issue.title,
-    text: issue.description || issue.identifier || "",
-    createdAt: issue.updatedAt
-      ? new Date(issue.updatedAt).getTime()
-      : undefined,
-    user: {
-      id: issue.assignee?.id,
-      name: issue.assignee?.name,
-      email: issue.assignee?.email,
-      avatar: issue.assignee?.avatarUrl || undefined,
-    },
-    raw: issue,
-  };
 }
 
 export function setupSSE(res: Response) {

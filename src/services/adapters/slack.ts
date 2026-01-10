@@ -328,29 +328,13 @@ export const getUnreadMessages = async (access_token: string) => {
       "GET",
       { channel: channel.id, limit: unreadCount }
     );
-    for (const message of history.messages) {
-      let user_profile = undefined;
-      try {
-        if (message.user) {
-          const userInfo = await makeSlackRequest(
-            access_token,
-            "users.info",
-            "GET",
-            { user: message.user }
-          );
-          user_profile = userInfo.user?.profile;
-        }
-      } catch (e) {
-        // ignore profile fetch failures
-      }
-      unreadMessages.push({
+    unreadMessages.push(
+      ...history.messages.map((message: any) => ({
         channel: channel.name,
         time: message.ts,
         text: message.text,
-        user: message.user,
-        user_profile,
-      });
-    }
+      }))
+    );
   }
   return unreadMessages;
 };

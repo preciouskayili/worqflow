@@ -265,26 +265,7 @@ export const listUnreadEmails = async (
     maxResults: maxResults,
   });
 
-  const messages = res.data.messages || [];
-
-  const detailedMessages = await Promise.all(
-    messages.map(async (msg) => {
-      const full = await service.users.messages.get({
-        userId: "me",
-        id: msg.id!,
-        format: "metadata",
-        metadataHeaders: ["Subject", "From"],
-      });
-      return {
-        id: msg.id,
-        snippet: full.data.snippet,
-        headers: full.data.payload?.headers,
-        internalDate: full.data.internalDate,
-      };
-    })
-  );
-
-  return detailedMessages;
+  return res.data.messages || [];
 };
 
 export const markAsUnread = async (
