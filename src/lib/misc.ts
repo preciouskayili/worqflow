@@ -133,17 +133,35 @@ export function encode({
   return encodedMessage;
 }
 
-export async function makeGithubRequest(
-  url: string,
-  method: string,
-  body?: any
+const GITHUB_API_BASE = "https://api.github.com";
+
+export async function makeGitHubRequest(
+  path: string,
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
+  body: any | undefined,
+  accessToken: string
 ) {
-  const res = await fetch(url, {
+  const headers: HeadersInit = {
+    Authorization: `Bearer ${accessToken}`,
+    Accept: "application/vnd.github+json",
+  };
+
+  if (body) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  const res = await fetch(`${GITHUB_API_BASE}${path}`, {
     method,
-    headers: {
-      Authorization: `Bearer ${process.env.GITHUB_ACCESS_TOKEN}`,
-    },
-    body: JSON.stringify(body),
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
   });
-  return await res.json();
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`GitHub API error ${res.status}: ${text}`);
+  }
+
+  if (res.status === 204) return null;
+
+  return res.json();
 }
