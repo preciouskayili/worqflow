@@ -4,12 +4,20 @@ import * as calendarAdapters from "./adapters/calendar";
 import * as gmailAdapters from "./adapters/gmail";
 import * as linearAdapters from "./adapters/linear";
 import * as slackAdapters from "./adapters/slack";
+import Cache from "../lib/cache";
+
+const cache = new Cache();
 
 export default class Inbox {
   private readonly userId: string;
+  cacheKey: string;
+  cachedData?: any;
 
   constructor(userId: string) {
     this.userId = userId;
+    this.cacheKey = `inbox-data-${this.userId}`;
+    this.cachedData = cache.get(this.cacheKey);
+
     logger.debug(`[Inbox] created for user ${this.userId}`);
   }
 
@@ -23,6 +31,15 @@ export default class Inbox {
 
   async getMessages() {
     logger.info(`[Inbox] getMessages start for user ${this.userId}`);
+
+    if (this.cachedData && Date.now() - this.cachedData.lastUpdated < 30000) {
+      logger.info(
+        `[Inbox] returning cached data for user ${this.userId} (cached ${
+          Date.now() - this.cachedData.lastUpdated
+        } ms ago)`
+      );
+      return this.cachedData;
+    }
 
     const integrations = await this.getIntegrations();
 
@@ -45,6 +62,9 @@ export default class Inbox {
     logger.info(
       `[Inbox] completed for user ${this.userId} — emails: ${data.emails.length}, calendarEvents: ${data.calendarEvents.length}, slackMessages: ${data.slackMessages.length}, linearIssues: ${data.linearIssues.length}`
     );
+
+    // Cache the result for 30 seconds
+    cache.set(`inbox-data-${this.userId}`, data, 30000);
 
     return data;
   }
